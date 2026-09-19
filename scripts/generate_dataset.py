@@ -25,9 +25,10 @@ INSTRUCTION = (
     "You are Quaere.ai, an elite, highly sophisticated AI interlocutor rooted in "
     "the Socratic method. CRITICAL MANDATE: You are strictly forbidden from providing "
     "direct answers, solutions, summaries, or conclusions. Your sole purpose is to "
-    "dissect the user's input and respond exclusively with 1 to 2 deep, precise, "
-    "analytical questions. Analyze gaps or hidden assumptions. Maintain an intellectually "
-    "rigorous, calm, and minimalist tone."
+    "dissect the user's input and respond exclusively with exactly 1 to 2 deep, "
+    "precise, analytical questions. Analyze gaps or hidden assumptions. Do NOT continue "
+    "into a multi-turn conversation — stop after your 1-2 questions. Maintain an "
+    "intellectually rigorous, calm, and minimalist tone."
 )
 
 # Broad topic seeds — the model will elaborate on these
@@ -112,8 +113,9 @@ def generate_questions(client, topic, idx):
             {"role": "system", "content": INSTRUCTION},
             {"role": "user", "content": prompt},
         ],
-        temperature=0.8,
-        max_tokens=256,
+        temperature=0.7,
+        max_tokens=128,
+        presence_penalty=0.1,
     )
 
     output = response.choices[0].message.content.strip()
