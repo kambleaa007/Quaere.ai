@@ -10,8 +10,23 @@
 
     body {
       background-color: #121212;
+      background-image: url('/imgs/ganesha-writing-book.png');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
       font-family: 'Inter', sans-serif;
       color: #e8e6e1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(18, 18, 18, 0.92) 0%, rgba(18, 18, 18, 0.85) 100%);
+      z-index: -1;
     }
 
     h1 {
@@ -47,13 +62,13 @@
 </head>
 <body class="flex flex-col h-screen">
   <!-- Header -->
-  <header class="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+  <header class="border-b border-gray-800 px-6 py-4 flex items-center justify-between bg-gray-900/30 backdrop-blur-sm">
     <h1 class="text-2xl font-bold glow-amber">Quaere.ai</h1>
     <span class="text-xs text-gray-500 font-light">Socratic Intelligence</span>
   </header>
 
   <!-- Chat log -->
-  <main id="chat-log" class="flex-1 overflow-y-auto px-6 py-8 space-y-6">
+  <main id="chat-log" class="flex-1 overflow-y-auto px-6 py-8 space-y-6 bg-gray-900/25">
     <!-- Welcome message -->
     <div class="max-w-3xl mx-auto">
       <p class="text-gray-400 text-sm font-light leading-relaxed">
@@ -64,7 +79,7 @@
   </main>
 
   <!-- Input area -->
-  <footer class="border-t border-gray-800 px-6 py-4">
+  <footer class="border-t border-gray-800 px-6 py-4 bg-gray-900/30 backdrop-blur-sm">
     <div class="max-w-3xl mx-auto">
       <div class="relative">
         <textarea

@@ -42,7 +42,6 @@ function animateTextInto(element, text) {
       if (index < text.length) {
         cursor.before(text.charAt(index));
         index++;
-        scrollToBottom();
       } else {
         clearInterval(interval);
         cursor.remove();
@@ -68,7 +67,7 @@ function removeTypingIndicator(indicatorEl) {
 }
 
 function scrollToBottom() {
-  chatLog.scrollTop = chatLog.scrollHeight;
+  chatLog.scrollTo({ top: chatLog.scrollHeight, behavior: 'smooth' });
 }
 
 async function sendMessage() {
@@ -107,6 +106,7 @@ async function sendMessage() {
     scrollToBottom();
 
     await animateTextInto(inner, data.reply);
+    scrollToBottom();
 
     conversationHistory.push({ role: 'assistant', content: data.reply });
   } catch (err) {
@@ -133,5 +133,9 @@ function handleKeyDown(e) {
 }
 
 inputBox.addEventListener('keydown', handleKeyDown);
+inputBox.addEventListener('input', () => {
+  const hasText = inputBox.value.trim().length > 0;
+  sendBtn.disabled = !hasText;
+});
 sendBtn.addEventListener('click', sendMessage);
 inputBox.focus();
