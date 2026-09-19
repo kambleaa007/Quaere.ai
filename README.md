@@ -7,7 +7,7 @@ A Socratic AI that never answers — it asks. Built with Node.js + Express, a Da
 ## Features
 
 - **Socratic-only behavior** — a hardened system prompt forces the AI to respond exclusively with probing questions
-- **Dual provider** — Ollama (local) or any OpenAI-compatible API (Groq, TogetherAI, OpenAI)
+- **Triple provider** — Ollama (local), any OpenAI-compatible API (Groq/TogetherAI/OpenAI), or Hugging Face Inference API with a custom fine-tuned model
 - **Dark Academia / Obsidian UI** — deep charcoal background, amber glow, frosted-glass panels with a background image
 - **Smooth typing animation** — character-by-character reveal with smooth scroll
 - **Render.com ready** — `render.yaml` for one-click deploy
@@ -33,8 +33,15 @@ Open `http://localhost:3000`.
 
 | Variable | Required | Description |
 |---|---|---|
-| `AI_PROVIDER` | no | `ollama` (default) or `openai-compatible` |
-| `GROQ_API_KEY` | if OpenAI-compatible | Groq API key (`gsk-…`) — also accepts `AI_API_KEY` as fallback |
+| `AI_PROVIDER` | no | `ollama` (default), `openai-compatible`, or `huggingface` |
+| `GROQ_API_KEY` | if openai-compatible | Groq API key (`gsk-…`) — also accepts `AI_API_KEY` as fallback |
+| `OPENAI_BASE_URL` | no | API base URL (default: Groq) |
+| `OPENAI_MODEL` | no | Model name (default: `llama-3.3-70b-versatile`) |
+| `OLLAMA_MODEL` | no | Ollama model (default: `llama3`) |
+| `HF_API_KEY` | if huggingface | Hugging Face token |
+| `HF_MODEL_ID` | if huggingface | Model repo ID (e.g., `yourname/quaere-socratic`) |
+| `HF_ENDPOINT` | no | Custom HF Inference API URL |
+| `PORT` | no | Server port (default: `3000`) |
 | `OPENAI_BASE_URL` | no | API base URL (default: Groq) |
 | `OPENAI_MODEL` | no | Model name (default: `llama-3.3-70b-versatile`) |
 | `OLLAMA_MODEL` | no | Ollama model (default: `llama3`) |
@@ -57,6 +64,14 @@ OPENAI_MODEL=llama-3.3-70b-versatile
 GROQ_API_KEY=gsk-your-key
 ```
 
+### Hugging Face (custom fine-tuned model)
+```bash
+AI_PROVIDER=huggingface
+HF_API_KEY=hf-your-key
+HF_MODEL_ID=yourname/quaere-socratic
+```
+> Once you've fine-tuned and uploaded your model (see *Fine-Tuning Pipeline* below).
+
 ## Deployment — Render.com
 
 > **[Quaere.ai is live on Render](https://quaere-ai.onrender.com)** — add your `GROQ_API_KEY` secret and push to deploy.
@@ -74,15 +89,18 @@ git push
 
 ```
 Quaere.ai/
-├── server.js              # Express backend: POST /api/chat, /health
-├── package.json           # Dependencies + scripts
-├── render.yaml            # Render.com service config
-├── .env.example           # Environment variable template
-├── .gitattributes         # Line-ending normalization
+├── server.js               # Express backend: POST /api/chat, /health
+├── package.json            # Dependencies + scripts
+├── render.yaml             # Render.com service config
+├── .env.example            # Environment variable template
+├── .gitattributes          # Line-ending normalization
 ├── public/
-│   ├── index.html         # UI (Tailwind, Dark Academia)
-│   └── app.js             # Frontend logic + typing animation
-├── imgs/                  # Background images
+│   ├── index.html          # UI (Tailwind, Dark Academia)
+│   └── app.js              # Frontend logic + typing animation
+├── imgs/                   # Background images
+├── scripts/
+│   ├── generate_dataset.py      # Socratic Q&A dataset generator
+│   └── finetune_colab.py        # Unsloth QLoRA fine-tuning script
 └── LICENSE
 ```
 
@@ -101,17 +119,42 @@ Content-Type: application/json
 → { "reply": "What do you think gives meaning to your own life?" }
 ```
 
-## Custom Model Roadmap
+## Fine-Tuning Pipeline
 
-The current system-prompt approach can be superseded by a **fine-tuned model** that asks questions at the weight level. See `ANALYSIS.md` for the full QLoRA + llama.cpp plan:
+The current system-prompt approach can be upgraded to a **fine-tuned model** that asks questions at the weight level.
 
-1. **Fine-tune** Llama 3.2 (2 GB) via Unsloth / QLoRA on Google Colab
-2. **Export** as GGUF (Q4_K_M / Q5_K_M)
-3. **Serve** with `llama-server` (no Ollama API needed)
-4. **Point** `server.js` at the local llama.cpp endpoint
+### Step 1 — Generate Dataset
+```bash
+pip install openai
+export OPENAI_API_KEY=sk-...
+python scripts/generate_dataset.py --count 500 --output dataset.jsonl
+```
+Generates 500–2000 JSONL pairs (`{instruction, input, output}`) where every output is a Socratic question.
+
+### Step 2 — Fine-Tune on Colab
+1. Open [Google Colab](https://colab.research.google.com/) (free T4 GPU)
+2. Upload `dataset.jsonl` and `scripts/finetune_colab.py`
+3. Run:
+```python
+%run scripts/finetune_colab.py --dataset dataset.jsonl --output_dir ./output --colab --epochs 3
+```
+4. Download `quaere-socratic-q4_k_m.gguf` from `/content/output`
+
+### Step 3 — Upload to Hugging Face
+1. Create a repo at [huggingface.co/new](https://huggingface.co/new): `yourname/quaere-socratic`
+2. Upload the `.gguf` file
+3. Enable **Inference API** → select **Text Generation** task
+
+### Step 4 — Deploy
+Set `AI_PROVIDER=huggingface` in your Render env vars and update `render.yaml`:
+```bash
+git add .
+git commit -m "Switch to custom Socratic model"
+git push
+```
 
 ```
-Browser → Express Server → llama.cpp Server → Fine-tuned Quaere.ai (GGUF)
+Dataset → Colab (fine-tune) → HF Hub (host) → llama.cpp / HF Inference → Quaere.ai
 ```
 
 ## License

@@ -66,6 +66,38 @@ async function callOpenAI(messages) {
   return data.choices[0].message.content;
 }
 
+async function callHuggingFace(messages) {
+  const apiKey = process.env.HF_API_KEY;
+  const modelId = process.env.HF_MODEL_ID;
+  const endpoint = process.env.HF_ENDPOINT || `https://api-inference.huggingface.co/models/${modelId}`;
+
+  if (!apiKey) {
+    throw new Error('HF_API_KEY environment variable is required for "huggingface" provider.');
+  }
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      inputs: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+      parameters: { max_new_tokens: 512, temperature: 0.7, return_full_text: false },
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Hugging Face request failed (${response.status}): ${detail}`);
+  }
+
+  const data = await response.json();
+  if (Array.isArray(data)) return data[0].generated_text;
+  if (data.error) throw new Error(data.error);
+  return data.generated_text || '';
+}
+
 app.post('/api/chat', async (req, res) => {
   const { messages } = req.body;
 
@@ -81,8 +113,10 @@ app.post('/api/chat', async (req, res) => {
       reply = await callOllama(messages);
     } else if (provider === 'openai-compatible') {
       reply = await callOpenAI(messages);
+    } else if (provider === 'huggingface') {
+      reply = await callHuggingFace(messages);
     } else {
-      return res.status(400).json({ error: `Unknown AI_PROVIDER "${provider}". Use "ollama" or "openai-compatible".` });
+      return res.status(400).json({ error: `Unknown AI_PROVIDER "${provider}". Use "ollama", "openai-compatible", or "huggingface".` });
     }
 
     res.json({ reply });
