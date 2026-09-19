@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: quaere-ai
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: AI_PROVIDER
+        value: openai-compatible
+      - key: OPENAI_BASE_URL
+        value: https://api.openai.com/v1
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: AI_API_KEY
+        fromSecret: AI_API_KEY
+    plan: free
