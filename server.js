@@ -35,11 +35,11 @@ async function callOllama(messages) {
 
 async function callOpenAI(messages) {
   const baseURL = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
-  const apiKey = process.env.AI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY || process.env.AI_API_KEY;
   const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
   if (!apiKey) {
-    throw new Error('AI_API_KEY environment variable is required for "openai-compatible" provider.');
+    throw new Error('GROQ_API_KEY (or AI_API_KEY) environment variable is required for "openai-compatible" provider.');
   }
 
   const response = await fetch(`${baseURL}/chat/completions`, {

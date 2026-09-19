@@ -8,9 +8,9 @@ services:
       - key: AI_PROVIDER
         value: openai-compatible
       - key: OPENAI_BASE_URL
-        value: https://api.openai.com/v1
+        value: https://api.groq.com/openai/v1
       - key: OPENAI_MODEL
-        value: gpt-4o-mini
-      - key: AI_API_KEY
-        fromSecret: AI_API_KEY
+        value: llama-3.3-70b-versatile
+      - key: GROQ_API_KEY
+        fromSecret: GROQ_API_KEY
     plan: free
