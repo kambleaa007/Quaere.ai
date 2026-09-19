@@ -33,7 +33,7 @@ Open `http://localhost:3000`.
 
 | Variable | Required | Description |
 |---|---|---|
-| `AI_PROVIDER` | no | `ollama` (default), `openai-compatible`, or `huggingface` |
+| `AI_PROVIDER` | no | `ollama` (local default), `openai-compatible` (Groq fallback), or `huggingface` (Render default) |
 | `GROQ_API_KEY` | if openai-compatible | Groq API key (`gsk-…`) — also accepts `AI_API_KEY` as fallback |
 | `OPENAI_BASE_URL` | no | API base URL (default: Groq) |
 | `OPENAI_MODEL` | no | Model name (default: `llama-3.3-70b-versatile`) |
@@ -134,16 +134,35 @@ Generates 500–2000 JSONL pairs (`{instruction, input, output}`) where every ou
 ### Step 2 — Fine-Tune on Colab
 1. Open [Google Colab](https://colab.research.google.com/) (free T4 GPU)
 2. Upload `dataset.jsonl` and `scripts/finetune_colab.py`
-3. Run:
-```python
-%run scripts/finetune_colab.py --dataset dataset.jsonl --output_dir ./output --colab --epochs 3
-```
-4. Download `quaere-socratic-q4_k_m.gguf` from `/content/output`
+3. Install Unsloth:
+   ```python
+   !pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
+   ```
+4. Run:
+   ```python
+   %run scripts/finetune_colab.py --dataset dataset.jsonl --output_dir ./output --colab --epochs 3
+   ```
+5. Download `quaere-socratic-q4_k_m.gguf` from `/content/output`
+6. Upload the `.gguf` to Hugging Face
 
 ### Step 3 — Upload to Hugging Face
-1. Create a repo at [huggingface.co/new](https://huggingface.co/new): `yourname/quaere-socratic`
-2. Upload the `.gguf` file
-3. Enable **Inference API** → select **Text Generation** task
+```bash
+pip install huggingface_hub
+export HF_TOKEN=hf-your-token
+python scripts/upload_to_hf.py
+```
+Or paste in a Colab cell:
+```python
+from huggingface_hub import HfApi, upload_folder
+
+api = HfApi()
+REPO_ID = "kambleaa007/quaere-socratic"
+
+api.create_repo(repo_id=REPO_ID, repo_type="model", private=False, exist_ok=True)
+upload_folder(folder_path="/content/quaere-merged", repo_id=REPO_ID, repo_type="model")
+print(f"Uploaded to https://huggingface.co/{REPO_ID}")
+```
+> **Tip**: Also upload the `.gguf` file — the `scripts/upload_to_hf.py` script does both.
 
 ### Step 4 — Deploy
 Set `AI_PROVIDER=huggingface` in your Render env vars and update `render.yaml`:

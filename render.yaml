@@ -6,7 +6,11 @@ services:
     startCommand: node server.js
     envVars:
       - key: AI_PROVIDER
-        value: openai-compatible
+        value: huggingface
+      - key: HF_MODEL_ID
+        value: kambleaa007/quaere-socratic
+      - key: HF_API_KEY
+        fromSecret: HF_API_KEY
       - key: OPENAI_BASE_URL
         value: https://api.groq.com/openai/v1
       - key: OPENAI_MODEL
