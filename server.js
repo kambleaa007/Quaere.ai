@@ -329,7 +329,11 @@ const provider = process.env.AI_PROVIDER || 'openai-compatible';
 app.post('/api/translate', async (req, res) => {
   const { text } = req.body;
 
+  console.log('[quaere] Translate request received');
+  console.log('[quaere] Request body:', JSON.stringify(req.body));
+
   if (!text || typeof text !== 'string') {
+    console.error('[quaere] Missing text in request body');
     return res.status(400).json({ error: 'Request body must contain a "text" string.' });
   }
 
