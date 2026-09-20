@@ -52,15 +52,8 @@ function appendMessage(role, content) {
   chatLog.appendChild(wrapper);
   scrollToBottom();
 
-  if (role === 'assistant') {
-    contentDiv.classList.add('group');
-    contentDiv.addEventListener('mouseenter', () => {
-      buttonContainer.style.display = 'flex';
-    });
-    contentDiv.addEventListener('mouseleave', () => {
-      buttonContainer.style.display = 'none';
-    });
-
+    if (role === 'assistant') {
+    buttonContainer.style.display = 'flex';
     sanskritBtn.addEventListener('click', () => toggleTranslation(contentDiv, sanskritBtn, content, 'sanskrit'));
     hindiBtn.addEventListener('click', () => toggleTranslation(contentDiv, hindiBtn, content, 'hindi'));
   }
