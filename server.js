@@ -391,7 +391,73 @@ async function translateOpenAI(text) {
   return data.choices[0].message.content.trim();
 }
 
-const POLLINATIONS_ENDPOINT = 'https://gen.pollinations.ai/image';
+const POLLINATIONS_IMAGE_ENDPOINT = 'https://gen.pollinations.ai/image';
+const POLLINATIONS_TEXT_ENDPOINT = 'https://text.pollinations.ai/openai/chat/completions';
+
+async function generateImagePollinations(prompt) {
+  const model = process.env.POLLINATIONS_IMAGE_MODEL || 'flux';
+  const imageUrl = `${POLLINATIONS_IMAGE_ENDPOINT}/${encodeURIComponent(prompt.trim())}?model=${model}`;
+
+  console.log('[quaere IMAGE] Generation requested for prompt:', prompt.slice(0, 50) + '...');
+  console.log('[quaere IMAGE] Full Pollinations URL:', imageUrl);
+
+  const imageResponse = await fetch(imageUrl);
+
+  console.log('[quaere IMAGE] Response status:', imageResponse.status);
+  console.log('[quaere IMAGE] Response headers:', Object.fromEntries(imageResponse.headers.entries()));
+
+  if (!imageResponse.ok) {
+    const errorBody = await imageResponse.text();
+    console.error('[quaere IMAGE] Error response body:', errorBody);
+    throw new Error(`Pollinations request failed (${imageResponse.status}): ${errorBody}`);
+  }
+
+  const contentType = imageResponse.headers.get('content-type') || 'image/png';
+  const imageBuffer = await imageResponse.arrayBuffer();
+
+  const base64Image = Buffer.from(imageBuffer).toString('base64');
+  const dataUrl = `data:${contentType};base64,${base64Image}`;
+
+  console.log('[quaere IMAGE] Image generated successfully, size:', imageBuffer.byteLength, 'bytes, content-type:', contentType);
+
+  return dataUrl;
+}
+
+async function generateImagePollinationsText(prompt) {
+  const apiKey = process.env.POLLINATIONS_API_KEY;
+  const model = process.env.POLLINATIONS_MODEL || 'openai-small';
+  const systemPrompt = 'You are an image prompt engineer. Expand the user\'s idea into a single, highly detailed, evocative visual description suitable for an AI image generator. Output only the expanded prompt, nothing else.';
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
+  const response = await fetch(POLLINATIONS_TEXT_ENDPOINT, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt },
+      ],
+      max_tokens: 256,
+      temperature: 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Pollinations text request failed (${response.status}): ${detail}`);
+  }
+
+  const data = await response.json();
+  const expandedPrompt = data.choices[0].message.content.trim();
+  console.log('[quaere IMAGE] Expanded prompt:', expandedPrompt.slice(0, 80) + '...');
+
+  return generateImagePollinations(expandedPrompt);
+}
 
 app.post('/api/generate-image', async (req, res) => {
   const { prompt } = req.body;
@@ -400,32 +466,19 @@ app.post('/api/generate-image', async (req, res) => {
     return res.status(400).json({ error: 'Request body must contain a "prompt" string.' });
   }
 
+  const provider = process.env.LALITA_AI_PROVIDER || 'pollinations';
+
   try {
-    const imageUrl = `${POLLINATIONS_ENDPOINT}/${encodeURIComponent(prompt.trim())}?model=flux`;
-    
-    console.log('[quaere IMAGE] Generation requested for prompt:', prompt.slice(0, 50) + '...');
-    console.log('[quaere IMAGE] Full Pollinations URL:', imageUrl);
-    
-    const imageResponse = await fetch(imageUrl);
-    
-    console.log('[quaere IMAGE] Response status:', imageResponse.status);
-    console.log('[quaere IMAGE] Response headers:', Object.fromEntries(imageResponse.headers.entries()));
-    
-    if (!imageResponse.ok) {
-      const errorBody = await imageResponse.text();
-      console.error('[quaere IMAGE] Error response body:', errorBody);
-      throw new Error(`Pollinations request failed (${imageResponse.status}): ${errorBody}`);
+    let imageUrl;
+    if (provider === 'pollinations') {
+      imageUrl = await generateImagePollinations(prompt);
+    } else if (provider === 'pollinations-text') {
+      imageUrl = await generateImagePollinationsText(prompt);
+    } else {
+      return res.status(400).json({ error: `Unknown LALITA_AI_PROVIDER "${provider}". Use "pollinations" or "pollinations-text".` });
     }
 
-    const contentType = imageResponse.headers.get('content-type') || 'image/png';
-    const imageBuffer = await imageResponse.arrayBuffer();
-    
-    const base64Image = Buffer.from(imageBuffer).toString('base64');
-    const dataUrl = `data:${contentType};base64,${base64Image}`;
-    
-    console.log('[quaere IMAGE] Image generated successfully, size:', imageBuffer.byteLength, 'bytes, content-type:', contentType);
-    
-    res.json({ imageUrl: dataUrl });
+    res.json({ imageUrl });
   } catch (err) {
     console.error('[quaere] Image generation error:', err.message);
     res.status(502).json({ error: 'Failed to generate image.', detail: err.message });
@@ -443,6 +496,7 @@ app.listen(PORT, () => {
   console.log(`[quaere] OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? 'PRESENT (length: ' + process.env.OPENAI_API_KEY.length + ')' : 'NOT SET'}`);
   console.log(`[quaere] GROQ_API_KEY: ${process.env.GROQ_API_KEY ? 'PRESENT (length: ' + process.env.GROQ_API_KEY.length + ')' : 'NOT SET'}`);
   console.log(`[quaere] POLLINATIONS_API_KEY: ${process.env.POLLINATIONS_API_KEY ? 'PRESENT (length: ' + process.env.POLLINATIONS_API_KEY.length + ')' : 'NOT SET'}`);
+  console.log(`[quaere] LALITA_AI_PROVIDER: ${process.env.LALITA_AI_PROVIDER || 'not set (default: pollinations)'}`);
   console.log(`[quaere] OPENAI_BASE_URL: ${process.env.OPENAI_BASE_URL || 'not set'}`);
   console.log(`[quaere] OPENAI_MODEL: ${process.env.OPENAI_MODEL || 'not set'}`);
   console.log(`[quaere] server listening on port ${PORT} (AI_PROVIDER=${process.env.AI_PROVIDER || 'ollama'})`);
