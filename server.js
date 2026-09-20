@@ -353,7 +353,7 @@ async function translateOpenAI(text) {
   return data.choices[0].message.content.trim();
 }
 
-const POLLINATIONS_ENDPOINT = 'https://gen.pollinations.ai';
+const POLLINATIONS_ENDPOINT = 'https://gen.pollinations.ai/image';
 
 app.post('/api/generate-image', async (req, res) => {
   const { prompt } = req.body;
@@ -363,7 +363,7 @@ app.post('/api/generate-image', async (req, res) => {
   }
 
   try {
-    const imageUrl = `${POLLINATIONS_ENDPOINT}/image/${encodeURIComponent(prompt.trim())}?model=flux`;
+    const imageUrl = `${POLLINATIONS_ENDPOINT}/${encodeURIComponent(prompt.trim())}?model=flux`;
     
     console.log('[quaere] Image generation requested for prompt:', prompt.slice(0, 50) + '...');
     console.log('[quaere] Pollinations URL:', imageUrl);
