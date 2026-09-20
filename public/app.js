@@ -52,13 +52,11 @@ function appendMessage(role, content) {
   chatLog.appendChild(wrapper);
   scrollToBottom();
 
-    if (role === 'assistant') {
+  if (role === 'assistant') {
     buttonContainer.style.display = 'flex';
-    sanskritBtn.addEventListener('click', () => toggleTranslation(contentDiv, sanskritBtn, content, 'sanskrit'));
-    hindiBtn.addEventListener('click', () => toggleTranslation(contentDiv, hindiBtn, content, 'hindi'));
   }
 
-  return contentDiv;
+  return { wrapper, contentDiv, buttonContainer, sanskritBtn, hindiBtn };
 }
 
 function animateTextInto(element, text) {
@@ -199,8 +197,16 @@ async function sendMessage() {
     }
 
     const data = await response.json();
-    const inner = appendMessage('assistant', '');
-    await animateTextInto(inner, data.reply);
+    const { contentDiv, sanskritBtn, hindiBtn } = appendMessage('assistant', '');
+    sanskritBtn.style.display = 'none';
+    hindiBtn.style.display = 'none';
+    await animateTextInto(contentDiv, data.reply);
+    sanskritBtn.style.display = 'block';
+    hindiBtn.style.display = 'block';
+
+    sanskritBtn.addEventListener('click', () => toggleTranslation(contentDiv, sanskritBtn, data.reply, 'sanskrit'));
+    hindiBtn.addEventListener('click', () => toggleTranslation(contentDiv, hindiBtn, data.reply, 'hindi'));
+
     scrollToBottom();
 
     conversationHistory.push({ role: 'assistant', content: data.reply });
