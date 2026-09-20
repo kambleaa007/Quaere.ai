@@ -82,7 +82,7 @@ async function callOllama(messages) {
 
 async function callOpenAI(messages) {
   const baseURL = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
-  const apiKey = process.env.GROQ_API_KEY || process.env.AI_API_KEY || process.env.OPENROUTER_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY || process.env.GROQ_API_KEY || process.env.AI_API_KEY || process.env.OPENROUTER_API_KEY;
   const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
   console.log('[quaere] Provider: openai-compatible');
@@ -91,7 +91,7 @@ async function callOpenAI(messages) {
   console.log('[quaere] API Key present:', !!apiKey);
 
   if (!apiKey) {
-    throw new Error('GROQ_API_KEY (or AI_API_KEY) environment variable is required for "openai-compatible" provider.');
+    throw new Error('OPENAI_API_KEY, GROQ_API_KEY, AI_API_KEY, or OPENROUTER_API_KEY environment variable is required for "openai-compatible" provider.');
   }
 
   const body = {
