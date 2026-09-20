@@ -392,16 +392,58 @@ async function translateOpenAI(text) {
 }
 
 const POLLINATIONS_IMAGE_ENDPOINT = 'https://gen.pollinations.ai/image';
+const POLLINATIONS_VIDEO_ENDPOINT = 'https://gen.pollinations.ai/video';
 const POLLINATIONS_TEXT_ENDPOINT = 'https://text.pollinations.ai/openai/chat/completions';
+
+async function generateVideoPollinations(prompt) {
+  const model = process.env.POLLINATIONS_VIDEO_MODEL || 'seedance';
+  const apiKey = process.env.POLLINATIONS_API_KEY;
+  const videoUrl = `${POLLINATIONS_VIDEO_ENDPOINT}/${encodeURIComponent(prompt.trim())}?model=${model}`;
+
+  console.log('[quaere VIDEO] Generation requested for prompt:', prompt.slice(0, 50) + '...');
+  console.log('[quaere VIDEO] Full Pollinations URL:', videoUrl);
+
+  const headers = {};
+  if (apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
+  const videoResponse = await fetch(videoUrl, { headers });
+
+  console.log('[quaere VIDEO] Response status:', videoResponse.status);
+  console.log('[quaere VIDEO] Response headers:', Object.fromEntries(videoResponse.headers.entries()));
+
+  if (!videoResponse.ok) {
+    const errorBody = await videoResponse.text();
+    console.error('[quaere VIDEO] Error response body:', errorBody);
+    throw new Error(`Pollinations video request failed (${videoResponse.status}): ${errorBody}`);
+  }
+
+  const contentType = videoResponse.headers.get('content-type') || 'video/mp4';
+  const videoBuffer = await videoResponse.arrayBuffer();
+
+  const base64Video = Buffer.from(videoBuffer).toString('base64');
+  const dataUrl = `data:${contentType};base64,${base64Video}`;
+
+  console.log('[quaere VIDEO] Video generated successfully, size:', videoBuffer.byteLength, 'bytes, content-type:', contentType);
+
+  return dataUrl;
+}
 
 async function generateImagePollinations(prompt) {
   const model = process.env.POLLINATIONS_IMAGE_MODEL || 'flux';
+  const apiKey = process.env.POLLINATIONS_API_KEY;
   const imageUrl = `${POLLINATIONS_IMAGE_ENDPOINT}/${encodeURIComponent(prompt.trim())}?model=${model}`;
 
   console.log('[quaere IMAGE] Generation requested for prompt:', prompt.slice(0, 50) + '...');
   console.log('[quaere IMAGE] Full Pollinations URL:', imageUrl);
 
-  const imageResponse = await fetch(imageUrl);
+  const headers = {};
+  if (apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
+  const imageResponse = await fetch(imageUrl, { headers });
 
   console.log('[quaere IMAGE] Response status:', imageResponse.status);
   console.log('[quaere IMAGE] Response headers:', Object.fromEntries(imageResponse.headers.entries()));
@@ -423,10 +465,10 @@ async function generateImagePollinations(prompt) {
   return dataUrl;
 }
 
-async function generateImagePollinationsText(prompt) {
+async function expandPrompt(prompt, label = 'IMAGE') {
   const apiKey = process.env.POLLINATIONS_API_KEY;
   const model = process.env.POLLINATIONS_MODEL || 'openai-small';
-  const systemPrompt = 'You are an image prompt engineer. Expand the user\'s idea into a single, highly detailed, evocative visual description suitable for an AI image generator. Output only the expanded prompt, nothing else.';
+  const systemPrompt = 'You are a visual prompt engineer. Expand the user\'s idea into a single, highly detailed, evocative description suitable for an AI image or video generator. Output only the expanded prompt, nothing else.';
 
   const headers = { 'Content-Type': 'application/json' };
   if (apiKey) {
@@ -454,8 +496,13 @@ async function generateImagePollinationsText(prompt) {
 
   const data = await response.json();
   const expandedPrompt = data.choices[0].message.content.trim();
-  console.log('[quaere IMAGE] Expanded prompt:', expandedPrompt.slice(0, 80) + '...');
+  console.log(`[quaere ${label}] Expanded prompt:`, expandedPrompt.slice(0, 80) + '...');
 
+  return expandedPrompt;
+}
+
+async function generateImagePollinationsText(prompt) {
+  const expandedPrompt = await expandPrompt(prompt, 'IMAGE');
   return generateImagePollinations(expandedPrompt);
 }
 
@@ -482,6 +529,33 @@ app.post('/api/generate-image', async (req, res) => {
   } catch (err) {
     console.error('[quaere] Image generation error:', err.message);
     res.status(502).json({ error: 'Failed to generate image.', detail: err.message });
+  }
+});
+
+app.post('/api/generate-video', async (req, res) => {
+  const { prompt } = req.body;
+
+  if (!prompt || typeof prompt !== 'string') {
+    return res.status(400).json({ error: 'Request body must contain a "prompt" string.' });
+  }
+
+  const provider = process.env.SHIVA_AI_PROVIDER || 'pollinations';
+
+  try {
+    let videoUrl;
+    if (provider === 'pollinations') {
+      videoUrl = await generateVideoPollinations(prompt);
+    } else if (provider === 'pollinations-text') {
+      const expandedPrompt = await expandPrompt(prompt, 'VIDEO');
+      videoUrl = await generateVideoPollinations(expandedPrompt);
+    } else {
+      return res.status(400).json({ error: `Unknown SHIVA_AI_PROVIDER "${provider}". Use "pollinations" or "pollinations-text".` });
+    }
+
+    res.json({ videoUrl });
+  } catch (err) {
+    console.error('[quaere] Video generation error:', err.message);
+    res.status(502).json({ error: 'Failed to generate video.', detail: err.message });
   }
 });
 

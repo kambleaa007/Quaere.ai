@@ -29,9 +29,18 @@ services:
         value: http://localhost:8080
       - key: LLAMA_CPP_MODEL
         value: quaere-socratic-q4_k_m.gguf
-      # ── Pollinations config (set AI_PROVIDER=pollinations to use) ──
+      # ── Pollinations text config (set AI_PROVIDER=pollinations to use) ──
       - key: POLLINATIONS_MODEL
         value: openai-small
       - key: POLLINATIONS_API_KEY
         fromSecret: POLLINATIONS_API_KEY
+      # ── Pollinations image config (used by Goddess Lalita image page) ──
+      - key: LALITA_AI_PROVIDER
+        value: pollinations
+      - key: POLLINATIONS_IMAGE_MODEL
+        value: flux
+      - key: POLLINATIONS_VIDEO_MODEL
+        value: seedance
+      - key: SHIVA_AI_PROVIDER
+        value: pollinations
     plan: free
