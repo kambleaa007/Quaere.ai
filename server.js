@@ -228,6 +228,42 @@ async function callHuggingFace(messages) {
   return reply.trim();
 }
 
+async function callPollinations(messages) {
+  const apiKey = process.env.POLLINATIONS_API_KEY;
+  const model = process.env.POLLINATIONS_MODEL || 'openai-small';
+  const endpoint = process.env.POLLINATIONS_ENDPOINT || 'https://text.pollinations.ai/openai/chat/completions';
+
+  console.log('[quaere] Using Pollinations text at:', endpoint);
+  console.log('[quaere] Model:', model);
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+      max_tokens: 512,
+      temperature: 0.7,
+    }),
+  });
+
+  console.log('[quaere] Pollinations response status:', response.status);
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Pollinations request failed (${response.status}): ${detail}`);
+  }
+
+  const data = await response.json();
+  console.log('[quaere] Pollinations response received successfully');
+  return data.choices[0].message.content;
+}
+
 async function callLlamaCpp(messages) {
   const baseURL = process.env.LLAMA_CPP_URL || 'http://localhost:8080';
   const model = process.env.LLAMA_CPP_MODEL || 'QuantFactory/Llama-3.2-3B-Instruct-GGUF';
@@ -275,8 +311,10 @@ const provider = process.env.AI_PROVIDER || 'openai-compatible';
       reply = await callHuggingFace(messages);
     } else if (provider === 'llamacpp') {
       reply = await callLlamaCpp(messages);
+    } else if (provider === 'pollinations') {
+      reply = await callPollinations(messages);
     } else {
-      return res.status(400).json({ error: `Unknown AI_PROVIDER "${provider}". Use "openai-compatible", "k25", "kimi", "openrouter", "ollama", "huggingface", or "llamacpp".` });
+      return res.status(400).json({ error: `Unknown AI_PROVIDER "${provider}". Use "openai-compatible", "k25", "kimi", "openrouter", "ollama", "huggingface", "llamacpp", or "pollinations".` });
     }
 
     res.json({ reply });
@@ -368,12 +406,7 @@ app.post('/api/generate-image', async (req, res) => {
     console.log('[quaere IMAGE] Generation requested for prompt:', prompt.slice(0, 50) + '...');
     console.log('[quaere IMAGE] Full Pollinations URL:', imageUrl);
     
-    const imageResponse = await fetch(imageUrl, {
-      headers: {
-        'Accept': 'image/*',
-        'User-Agent': 'Quaere.ai Server'
-      }
-    });
+    const imageResponse = await fetch(imageUrl);
     
     console.log('[quaere IMAGE] Response status:', imageResponse.status);
     console.log('[quaere IMAGE] Response headers:', Object.fromEntries(imageResponse.headers.entries()));
@@ -409,6 +442,7 @@ app.listen(PORT, () => {
   console.log(`[quaere] OPENROUTER_API_KEY: ${process.env.OPENROUTER_API_KEY ? 'PRESENT (length: ' + process.env.OPENROUTER_API_KEY.length + ')' : 'NOT SET'}`);
   console.log(`[quaere] OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? 'PRESENT (length: ' + process.env.OPENAI_API_KEY.length + ')' : 'NOT SET'}`);
   console.log(`[quaere] GROQ_API_KEY: ${process.env.GROQ_API_KEY ? 'PRESENT (length: ' + process.env.GROQ_API_KEY.length + ')' : 'NOT SET'}`);
+  console.log(`[quaere] POLLINATIONS_API_KEY: ${process.env.POLLINATIONS_API_KEY ? 'PRESENT (length: ' + process.env.POLLINATIONS_API_KEY.length + ')' : 'NOT SET'}`);
   console.log(`[quaere] OPENAI_BASE_URL: ${process.env.OPENAI_BASE_URL || 'not set'}`);
   console.log(`[quaere] OPENAI_MODEL: ${process.env.OPENAI_MODEL || 'not set'}`);
   console.log(`[quaere] server listening on port ${PORT} (AI_PROVIDER=${process.env.AI_PROVIDER || 'ollama'})`);

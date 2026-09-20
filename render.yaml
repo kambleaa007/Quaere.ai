@@ -10,6 +10,7 @@ services:
       #   huggingface       : HF Inference API (needs Inference Endpoints, ~$9+/mo)
       #   llamacpp          : Local llama.cpp server (free, runs your own GGUF)
       #   ollama            : Local Ollama (free, development only)
+      #   pollinations       : Pollinations text API (free, keyless)
       - key: AI_PROVIDER
         value: openai-compatible
       - key: OPENAI_BASE_URL
@@ -28,4 +29,9 @@ services:
         value: http://localhost:8080
       - key: LLAMA_CPP_MODEL
         value: quaere-socratic-q4_k_m.gguf
+      # ── Pollinations config (set AI_PROVIDER=pollinations to use) ──
+      - key: POLLINATIONS_MODEL
+        value: openai-small
+      - key: POLLINATIONS_API_KEY
+        fromSecret: POLLINATIONS_API_KEY
     plan: free
