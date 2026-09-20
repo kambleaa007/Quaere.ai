@@ -16,6 +16,45 @@ const SYSTEM_PROMPT =
 
 const KIMI_FREE_ENDPOINT = process.env.KIMI_API_URL || 'https://api.moonshot.ai/v1/chat/completions';
 
+const K25_ENDPOINT = process.env.K25_API_URL || 'https://api.moonshot.ai/v1/chat/completions';
+
+async function callK25(messages) {
+  const apiKey = process.env.K25_API_KEY || process.env.MOONSHOT_API_KEY;
+  const model = process.env.K25_MODEL || 'k2.5';
+
+  if (!apiKey) {
+    throw new Error('K25_API_KEY (or MOONSHOT_API_KEY) environment variable is required for "k25" provider.');
+  }
+
+  console.log('[quaere] Using K2.5 at:', K25_ENDPOINT);
+  console.log('[quaere] Model:', model);
+
+  const response = await fetch(K25_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+      max_tokens: 512,
+      temperature: 0.7,
+    }),
+  });
+
+  console.log('[quaere] K2.5 response status:', response.status);
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`K2.5 request failed (${response.status}): ${detail}`);
+  }
+
+  const data = await response.json();
+  console.log('[quaere] K2.5 response received successfully');
+  return data.choices[0].message.content;
+}
+
 async function callOllama(messages) {
   const baseURL = process.env.OLLAMA_URL || 'http://localhost:11434';
   const model = process.env.OLLAMA_MODEL || 'llama3';
@@ -43,7 +82,7 @@ async function callOllama(messages) {
 
 async function callOpenAI(messages) {
   const baseURL = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
-  const apiKey = process.env.GROQ_API_KEY || process.env.AI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY || process.env.AI_API_KEY || process.env.OPENROUTER_API_KEY;
   const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
   if (!apiKey) {
@@ -209,22 +248,24 @@ app.post('/api/chat', async (req, res) => {
     return res.status(400).json({ error: 'Request body must contain a "messages" array.' });
   }
 
-  const provider = process.env.AI_PROVIDER || 'ollama';
+const provider = process.env.AI_PROVIDER || 'openai-compatible';
 
   try {
     let reply;
-    if (provider === 'ollama') {
-      reply = await callOllama(messages);
-    } else if (provider === 'openai-compatible') {
+    if (provider === 'openai-compatible' || provider === 'openrouter') {
       reply = await callOpenAI(messages);
+    } else if (provider === 'k25') {
+      reply = await callK25(messages);
+    } else if (provider === 'kimi') {
+      reply = await callKimi(messages);
+    } else if (provider === 'ollama') {
+      reply = await callOllama(messages);
     } else if (provider === 'huggingface') {
       reply = await callHuggingFace(messages);
     } else if (provider === 'llamacpp') {
       reply = await callLlamaCpp(messages);
-    } else if (provider === 'kimi') {
-      reply = await callKimi(messages);
     } else {
-      return res.status(400).json({ error: `Unknown AI_PROVIDER "${provider}". Use "ollama", "openai-compatible", "huggingface", "llamacpp", or "kimi".` });
+      return res.status(400).json({ error: `Unknown AI_PROVIDER "${provider}". Use "openai-compatible", "k25", "kimi", "openrouter", "ollama", "huggingface", or "llamacpp".` });
     }
 
     res.json({ reply });
