@@ -11,7 +11,7 @@ const messageCache = new Map();
 
 function createMessageElement(role, content) {
   const wrapper = document.createElement('div');
-  wrapper.className = 'max-w-3xl mx-auto relative group';
+  wrapper.className = 'max-w-3xl mx-auto';
 
   const inner = document.createElement('div');
   inner.className = role === 'user'
@@ -22,10 +22,11 @@ function createMessageElement(role, content) {
   inner.textContent = content;
 
   const sanskritBtn = document.createElement('button');
-  sanskritBtn.className = 'absolute top-0 right-0 opacity-0 group-hover:opacity-100 bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 px-1.5 py-0.5 rounded transition-all duration-200';
+  sanskritBtn.className = 'translate-sanskrit-btn absolute top-0 right-0 ml-2 opacity-0 hover:opacity-100 bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 px-1.5 py-0.5 rounded transition-all duration-200';
   sanskritBtn.textContent = '↺';
   sanskritBtn.title = 'Toggle Sanskrit';
   sanskritBtn.setAttribute('data-translated', 'false');
+  sanskritBtn.style.display = 'none';
 
   wrapper.appendChild(inner);
   wrapper.appendChild(sanskritBtn);
@@ -39,10 +40,11 @@ function appendMessage(role, content) {
   scrollToBottom();
 
   if (role === 'assistant') {
+    sanskritBtn.style.display = 'block';
     sanskritBtn.addEventListener('click', () => toggleSanskrit(inner, sanskritBtn, content));
   }
 
-  return inner;
+  return { inner, sanskritBtn };
 }
 
 function animateTextInto(element, text) {
@@ -166,10 +168,6 @@ async function sendMessage() {
 
     removeTypingIndicator(indicator);
 
-    const { wrapper, inner } = createMessageElement('assistant', '');
-    chatLog.appendChild(wrapper);
-    scrollToBottom();
-
     if (!response.ok) {
       const errData = await response.json();
       appendMessage('assistant', `Error: ${errData.error || 'Something went wrong.'}`);
@@ -177,7 +175,10 @@ async function sendMessage() {
     }
 
     const data = await response.json();
+    const { inner, sanskritBtn } = appendMessage('assistant', '');
+    sanskritBtn.style.display = 'none';
     await animateTextInto(inner, data.reply);
+    sanskritBtn.style.display = 'block';
     scrollToBottom();
 
     conversationHistory.push({ role: 'assistant', content: data.reply });
