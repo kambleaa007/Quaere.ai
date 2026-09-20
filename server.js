@@ -75,6 +75,12 @@ async function callHuggingFace(messages) {
     throw new Error('HF_API_KEY environment variable is required for "huggingface" provider.');
   }
 
+  if (!modelId) {
+    throw new Error('HF_MODEL_ID environment variable is required for "huggingface" provider.');
+  }
+
+  const prompt = formatLlama3Prompt(SYSTEM_PROMPT, messages);
+
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -82,8 +88,9 @@ async function callHuggingFace(messages) {
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      inputs: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+      inputs: prompt,
       parameters: { max_new_tokens: 512, temperature: 0.7, return_full_text: false },
+      options: { wait_for_model: true, use_cache: true },
     }),
   });
 
