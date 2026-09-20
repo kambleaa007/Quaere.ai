@@ -353,6 +353,29 @@ async function translateOpenAI(text) {
   return data.choices[0].message.content.trim();
 }
 
+const POLLINATIONS_API_KEY = process.env.POLLINATIONS_API_KEY;
+const POLLINATIONS_ENDPOINT = 'https://pollinations.ai/api';
+
+app.post('/api/generate-image', async (req, res) => {
+  const { prompt } = req.body;
+
+  if (!prompt || typeof prompt !== 'string') {
+    return res.status(400).json({ error: 'Request body must contain a "prompt" string.' });
+  }
+
+  try {
+    const imageUrl = `${POLLINATIONS_ENDPOINT}/${encodeURIComponent(prompt.trim())}`;
+    
+    console.log('[quaere] Image generation requested for prompt:', prompt.slice(0, 50) + '...');
+    console.log('[quaere] Pollinations URL:', imageUrl);
+    
+    res.json({ imageUrl });
+  } catch (err) {
+    console.error('[quaere] Image generation error:', err.message);
+    res.status(502).json({ error: 'Failed to generate image.', detail: err.message });
+  }
+});
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'quaere.ai' });
 });
