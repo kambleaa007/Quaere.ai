@@ -66,6 +66,18 @@ async function callOpenAI(messages) {
   return data.choices[0].message.content;
 }
 
+function formatLlama3Prompt(systemPrompt, messages) {
+  const allMessages = [{ role: 'system', content: systemPrompt }, ...messages];
+  let prompt = '<|begin_of_text|>';
+
+  for (const msg of allMessages) {
+    prompt += `<|start_header_id|>${msg.role}<|end_header_id|>\n\n${msg.content}<|eot_id|>`;
+  }
+
+  prompt += '<|start_header_id|>assistant<|end_header_id|>\n\n';
+  return prompt;
+}
+
 async function callHuggingFace(messages) {
   const apiKey = process.env.HF_API_KEY;
   const modelId = process.env.HF_MODEL_ID;
@@ -100,9 +112,26 @@ async function callHuggingFace(messages) {
   }
 
   const data = await response.json();
-  if (Array.isArray(data)) return data[0].generated_text;
-  if (data.error) throw new Error(data.error);
-  return data.generated_text || '';
+
+  let reply;
+  if (typeof data === 'string') {
+    reply = data;
+  } else if (Array.isArray(data) && data[0]?.generated_text !== undefined) {
+    reply = data[0].generated_text;
+  } else if (data.generated_text !== undefined) {
+    reply = data.generated_text;
+  } else if (data.error) {
+    throw new Error(data.error);
+  } else {
+    throw new Error('Unexpected response from Hugging Face API');
+  }
+
+  // HF returns the full text (prompt + generation). Strip the prompt.
+  if (reply.startsWith(prompt)) {
+    reply = reply.slice(prompt.length);
+  }
+
+  return reply.trim();
 }
 
 app.post('/api/chat', async (req, res) => {
