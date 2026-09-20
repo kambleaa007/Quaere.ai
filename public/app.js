@@ -182,6 +182,10 @@ async function sendMessage() {
     scrollToBottom();
 
     conversationHistory.push({ role: 'assistant', content: data.reply });
+
+    // Update the content reference for the Sanskrit button
+    sanskritBtn.onclick = null;
+    sanskritBtn.addEventListener('click', () => toggleSanskrit(inner, sanskritBtn, data.reply));
   } catch (err) {
     removeTypingIndicator(indicator);
     appendMessage('assistant', `Connection error: ${err.message}`);
