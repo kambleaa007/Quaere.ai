@@ -14,6 +14,8 @@ app.use('/imgs', express.static(path.join(__dirname, 'imgs')));
 const SYSTEM_PROMPT =
   "You are Quaere.ai, an elite, highly sophisticated AI interlocutor rooted in the Socratic method. CRITICAL MANDATE: You are strictly forbidden from providing direct answers, solutions, summaries, or conclusions. Your sole architecture is designed to dissect the user's input and respond exclusively with deep, precise, and analytical questions. Analyze gaps or hidden assumptions. Respond with 1 to 2 sharp, highly targeted questions. Maintain an intellectually rigorous, calm, and minimalist tone.";
 
+const KIMI_FREE_ENDPOINT = 'https://api.moonshot.ai/v1/chat/completions';
+
 async function callOllama(messages) {
   const baseURL = process.env.OLLAMA_URL || 'http://localhost:11434';
   const model = process.env.OLLAMA_MODEL || 'llama3';
@@ -65,6 +67,37 @@ async function callOpenAI(messages) {
   if (!response.ok) {
     const detail = await response.text();
     throw new Error(`OpenAI-compatible request failed (${response.status}): ${detail}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+async function callKimi(messages) {
+  const apiKey = process.env.KIMI_API_KEY;
+  if (!apiKey) {
+    throw new Error('KIMI_API_KEY environment variable is required for "kimi" provider.');
+  }
+
+  console.log('[quaere] Using Moonshot Kimi (free tier)');
+
+  const response = await fetch(KIMI_FREE_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: process.env.KIMI_MODEL || 'moonshot-v1-8k',
+      messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+      max_tokens: 512,
+      temperature: 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Kimi request failed (${response.status}): ${detail}`);
   }
 
   const data = await response.json();
@@ -182,8 +215,10 @@ app.post('/api/chat', async (req, res) => {
       reply = await callHuggingFace(messages);
     } else if (provider === 'llamacpp') {
       reply = await callLlamaCpp(messages);
+    } else if (provider === 'kimi') {
+      reply = await callKimi(messages);
     } else {
-      return res.status(400).json({ error: `Unknown AI_PROVIDER "${provider}". Use "ollama", "openai-compatible", "huggingface", or "llamacpp".` });
+      return res.status(400).json({ error: `Unknown AI_PROVIDER "${provider}". Use "ollama", "openai-compatible", "huggingface", "llamacpp", or "kimi".` });
     }
 
     res.json({ reply });
