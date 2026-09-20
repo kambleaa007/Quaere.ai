@@ -7,9 +7,11 @@ const sendBtn = document.getElementById('send-btn');
 const TYPING_SPEED = 35;
 const THINKING_DELAY = 600;
 
+const messageCache = new Map();
+
 function createMessageElement(role, content) {
   const wrapper = document.createElement('div');
-  wrapper.className = 'max-w-3xl mx-auto';
+  wrapper.className = 'max-w-3xl mx-auto relative group';
 
   const inner = document.createElement('div');
   inner.className = role === 'user'
@@ -17,15 +19,29 @@ function createMessageElement(role, content) {
     : 'text-sm font-light leading-relaxed text-gray-200';
 
   inner.setAttribute('role', role);
+  inner.textContent = content;
+
+  const sanskritBtn = document.createElement('button');
+  sanskritBtn.className = 'absolute top-0 right-0 opacity-0 group-hover:opacity-100 bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 px-1.5 py-0.5 rounded transition-all duration-200';
+  sanskritBtn.textContent = '↺';
+  sanskritBtn.title = 'Toggle Sanskrit';
+  sanskritBtn.setAttribute('data-translated', 'false');
+
   wrapper.appendChild(inner);
-  return { wrapper, inner };
+  wrapper.appendChild(sanskritBtn);
+
+  return { wrapper, inner, sanskritBtn };
 }
 
 function appendMessage(role, content) {
-  const { wrapper, inner } = createMessageElement(role, content);
-  inner.textContent = content;
+  const { wrapper, inner, sanskritBtn } = createMessageElement(role, content);
   chatLog.appendChild(wrapper);
   scrollToBottom();
+
+  if (role === 'assistant') {
+    sanskritBtn.addEventListener('click', () => toggleSanskrit(inner, sanskritBtn, content));
+  }
+
   return inner;
 }
 
@@ -51,13 +67,69 @@ function animateTextInto(element, text) {
   });
 }
 
-function showTypingIndicator() {
+async function showTypingIndicator() {
   const { wrapper, inner } = createMessageElement('assistant', '');
   inner.className = 'text-sm font-light leading-relaxed text-gray-300 italic';
   inner.innerHTML = '<span class="glow-amber">Quaere</span><span class="text-gray-500">. . .</span>';
   chatLog.appendChild(wrapper);
   scrollToBottom();
   return wrapper;
+}
+
+async function toggleSanskrit(innerEl, btn, originalContent) {
+  const isTranslated = btn.getAttribute('data-translated') === 'true';
+
+  if (isTranslated) {
+innerEl.textContent = originalContent;
+  innerEl.classList.remove('sanskrit-text');
+  btn.textContent = '↺';
+  btn.setAttribute('data-translated', 'false');
+    return;
+  }
+
+  const cacheKey = originalContent;
+  let translated = messageCache.get(cacheKey);
+
+  if (!translated) {
+    btn.textContent = '...';
+    btn.disabled = true;
+
+    try {
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: originalContent }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.detail || errData.error || 'Translation failed');
+      }
+
+      const data = await response.json();
+      translated = data.translatedText;
+      messageCache.set(cacheKey, translated);
+
+      innerEl.textContent = translated;
+      btn.textContent = 'EN';
+      btn.setAttribute('data-translated', 'true');
+    } catch (err) {
+      btn.textContent = '↺';
+      btn.disabled = false;
+      innerEl.classList.remove('sanskrit-text');
+      innerEl.innerHTML = `<span class="text-red-400 text-xs">Translation error: ${err.message}</span><br/>${originalContent}`;
+      setTimeout(() => {
+        innerEl.textContent = originalContent;
+      }, 2000);
+    } finally {
+      btn.disabled = false;
+    }
+  } else {
+    innerEl.textContent = translated;
+    innerEl.classList.add('sanskrit-text');
+    btn.textContent = 'EN';
+    btn.setAttribute('data-translated', 'true');
+  }
 }
 
 function removeTypingIndicator(indicatorEl) {
@@ -94,6 +166,10 @@ async function sendMessage() {
 
     removeTypingIndicator(indicator);
 
+    const { wrapper, inner } = createMessageElement('assistant', '');
+    chatLog.appendChild(wrapper);
+    scrollToBottom();
+
     if (!response.ok) {
       const errData = await response.json();
       appendMessage('assistant', `Error: ${errData.error || 'Something went wrong.'}`);
@@ -101,10 +177,6 @@ async function sendMessage() {
     }
 
     const data = await response.json();
-    const { wrapper, inner } = createMessageElement('assistant', '');
-    chatLog.appendChild(wrapper);
-    scrollToBottom();
-
     await animateTextInto(inner, data.reply);
     scrollToBottom();
 

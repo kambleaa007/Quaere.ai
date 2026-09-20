@@ -288,6 +288,71 @@ const provider = process.env.AI_PROVIDER || 'openai-compatible';
   }
 });
 
+app.post('/api/translate', async (req, res) => {
+  const { text } = req.body;
+
+  if (!text || typeof text !== 'string') {
+    return res.status(400).json({ error: 'Request body must contain a "text" string.' });
+  }
+
+  const provider = process.env.AI_PROVIDER;
+
+  try {
+    let translatedText;
+    if (provider === 'openai-compatible' || provider === 'openrouter') {
+      translatedText = await translateOpenAI(text);
+    } else {
+      return res.status(400).json({ error: 'Translation not configured for current provider.' });
+    }
+
+    res.json({ translatedText });
+  } catch (err) {
+    console.error('[quaere] Translation error:', err.message);
+    res.status(502).json({ error: 'Failed to translate.', detail: err.message });
+  }
+});
+
+async function translateOpenAI(text) {
+  const apiKey = process.env.OPENAI_API_KEY || process.env.GROQ_API_KEY || process.env.AI_API_KEY || process.env.OPENROUTER_API_KEY;
+  const baseURL = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
+  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+
+  if (!apiKey) {
+    throw new Error('API key required for translation.');
+  }
+
+  const response = await fetch(`${baseURL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a professional translator. Translate the given text to Sanskrit (in Devanagari script). Only return the translated text, nothing else.'
+        },
+        {
+          role: 'user',
+          content: text
+        }
+      ],
+      max_tokens: 512,
+      temperature: 0.3,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Translation request failed (${response.status}): ${detail}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content.trim();
+}
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'quaere.ai' });
 });
