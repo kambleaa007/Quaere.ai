@@ -365,10 +365,34 @@ app.post('/api/generate-image', async (req, res) => {
   try {
     const imageUrl = `${POLLINATIONS_ENDPOINT}/${encodeURIComponent(prompt.trim())}?model=flux`;
     
-    console.log('[quaere] Image generation requested for prompt:', prompt.slice(0, 50) + '...');
-    console.log('[quaere] Pollinations URL:', imageUrl);
+    console.log('[quaere IMAGE] Generation requested for prompt:', prompt.slice(0, 50) + '...');
+    console.log('[quaere IMAGE] Full Pollinations URL:', imageUrl);
     
-    res.json({ imageUrl });
+    const imageResponse = await fetch(imageUrl, {
+      headers: {
+        'Accept': 'image/*',
+        'User-Agent': 'Quaere.ai Server'
+      }
+    });
+    
+    console.log('[quaere IMAGE] Response status:', imageResponse.status);
+    console.log('[quaere IMAGE] Response headers:', Object.fromEntries(imageResponse.headers.entries()));
+    
+    if (!imageResponse.ok) {
+      const errorBody = await imageResponse.text();
+      console.error('[quaere IMAGE] Error response body:', errorBody);
+      throw new Error(`Pollinations request failed (${imageResponse.status}): ${errorBody}`);
+    }
+
+    const contentType = imageResponse.headers.get('content-type') || 'image/png';
+    const imageBuffer = await imageResponse.arrayBuffer();
+    
+    const base64Image = Buffer.from(imageBuffer).toString('base64');
+    const dataUrl = `data:${contentType};base64,${base64Image}`;
+    
+    console.log('[quaere IMAGE] Image generated successfully, size:', imageBuffer.byteLength, 'bytes, content-type:', contentType);
+    
+    res.json({ imageUrl: dataUrl });
   } catch (err) {
     console.error('[quaere] Image generation error:', err.message);
     res.status(502).json({ error: 'Failed to generate image.', detail: err.message });
@@ -380,5 +404,12 @@ app.get('/health', (_req, res) => {
 });
 
 app.listen(PORT, () => {
+  console.log(`[quaere] Server starting in environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`[quaere] AI_PROVIDER: ${process.env.AI_PROVIDER || 'not set'}`);
+  console.log(`[quaere] OPENROUTER_API_KEY: ${process.env.OPENROUTER_API_KEY ? 'PRESENT (length: ' + process.env.OPENROUTER_API_KEY.length + ')' : 'NOT SET'}`);
+  console.log(`[quaere] OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? 'PRESENT (length: ' + process.env.OPENAI_API_KEY.length + ')' : 'NOT SET'}`);
+  console.log(`[quaere] GROQ_API_KEY: ${process.env.GROQ_API_KEY ? 'PRESENT (length: ' + process.env.GROQ_API_KEY.length + ')' : 'NOT SET'}`);
+  console.log(`[quaere] OPENAI_BASE_URL: ${process.env.OPENAI_BASE_URL || 'not set'}`);
+  console.log(`[quaere] OPENAI_MODEL: ${process.env.OPENAI_MODEL || 'not set'}`);
   console.log(`[quaere] server listening on port ${PORT} (AI_PROVIDER=${process.env.AI_PROVIDER || 'ollama'})`);
 });

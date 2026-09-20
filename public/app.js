@@ -11,7 +11,7 @@ const messageCache = new Map();
 
 function createMessageElement(role, content) {
   const wrapper = document.createElement('div');
-  wrapper.className = 'max-w-3xl mx-auto';
+  wrapper.className = 'max-w-3xl mx-auto relative group';
 
   const inner = document.createElement('div');
   inner.className = role === 'user'
