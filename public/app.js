@@ -41,7 +41,6 @@ function appendMessage(role, content) {
 
   if (role === 'assistant') {
     sanskritBtn.style.display = 'block';
-    sanskritBtn.addEventListener('click', () => toggleSanskrit(inner, sanskritBtn, content));
   }
 
   return { inner, sanskritBtn };
@@ -82,10 +81,12 @@ async function toggleSanskrit(innerEl, btn, originalContent) {
   const isTranslated = btn.getAttribute('data-translated') === 'true';
 
   if (isTranslated) {
-innerEl.textContent = originalContent;
-  innerEl.classList.remove('sanskrit-text');
-  btn.textContent = '↺';
-  btn.setAttribute('data-translated', 'false');
+    innerEl.textContent = originalContent;
+    innerEl.classList.remove('sanskrit-text');
+    innerEl.style.color = '';
+    innerEl.style.fontSize = '';
+    btn.textContent = '↺';
+    btn.setAttribute('data-translated', 'false');
     return;
   }
 
@@ -129,6 +130,8 @@ innerEl.textContent = originalContent;
   } else {
     innerEl.textContent = translated;
     innerEl.classList.add('sanskrit-text');
+    innerEl.style.color = '#e8e6e1';
+    innerEl.style.fontSize = '1.1em';
     btn.textContent = 'EN';
     btn.setAttribute('data-translated', 'true');
   }
@@ -183,8 +186,7 @@ async function sendMessage() {
 
     conversationHistory.push({ role: 'assistant', content: data.reply });
 
-    // Update the content reference for the Sanskrit button
-    sanskritBtn.onclick = null;
+    // Bind the Sanskrit toggle handler with correct content
     sanskritBtn.addEventListener('click', () => toggleSanskrit(inner, sanskritBtn, data.reply));
   } catch (err) {
     removeTypingIndicator(indicator);
