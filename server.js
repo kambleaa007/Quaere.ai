@@ -85,9 +85,23 @@ async function callOpenAI(messages) {
   const apiKey = process.env.GROQ_API_KEY || process.env.AI_API_KEY || process.env.OPENROUTER_API_KEY;
   const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
+  console.log('[quaere] Provider: openai-compatible');
+  console.log('[quaere] Base URL:', baseURL);
+  console.log('[quaere] Model:', model);
+  console.log('[quaere] API Key present:', !!apiKey);
+
   if (!apiKey) {
     throw new Error('GROQ_API_KEY (or AI_API_KEY) environment variable is required for "openai-compatible" provider.');
   }
+
+  const body = {
+    model,
+    messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+    max_tokens: 512,
+    temperature: 0.7,
+  };
+
+  console.log('[quaere] Request body:', JSON.stringify(body).slice(0, 200));
 
   const response = await fetch(`${baseURL}/chat/completions`, {
     method: 'POST',
@@ -95,13 +109,10 @@ async function callOpenAI(messages) {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model,
-      messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
-      max_tokens: 512,
-      temperature: 0.7,
-    }),
+    body: JSON.stringify(body),
   });
+
+  console.log('[quaere] Response status:', response.status);
 
   if (!response.ok) {
     const detail = await response.text();
