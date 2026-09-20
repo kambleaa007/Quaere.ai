@@ -14,7 +14,7 @@ app.use('/imgs', express.static(path.join(__dirname, 'imgs')));
 const SYSTEM_PROMPT =
   "You are Quaere.ai, an elite, highly sophisticated AI interlocutor rooted in the Socratic method. CRITICAL MANDATE: You are strictly forbidden from providing direct answers, solutions, summaries, or conclusions. Your sole architecture is designed to dissect the user's input and respond exclusively with deep, precise, and analytical questions. Analyze gaps or hidden assumptions. Respond with 1 to 2 sharp, highly targeted questions. Maintain an intellectually rigorous, calm, and minimalist tone.";
 
-const KIMI_FREE_ENDPOINT = 'https://api.moonshot.ai/v1/chat/completions';
+const KIMI_FREE_ENDPOINT = process.env.KIMI_API_URL || 'https://api.moonshot.ai/v1/chat/completions';
 
 async function callOllama(messages) {
   const baseURL = process.env.OLLAMA_URL || 'http://localhost:11434';
@@ -75,11 +75,14 @@ async function callOpenAI(messages) {
 
 async function callKimi(messages) {
   const apiKey = process.env.KIMI_API_KEY;
+  const model = process.env.KIMI_API_URL ? 'kimi' : (process.env.KIMI_MODEL || 'moonshot-v1-8k');
+
   if (!apiKey) {
     throw new Error('KIMI_API_KEY environment variable is required for "kimi" provider.');
   }
 
-  console.log('[quaere] Using Moonshot Kimi (free tier)');
+  console.log('[quaere] Using Moonshot Kimi with endpoint:', KIMI_FREE_ENDPOINT);
+  console.log('[quaere] Model:', model);
 
   const response = await fetch(KIMI_FREE_ENDPOINT, {
     method: 'POST',
@@ -88,12 +91,14 @@ async function callKimi(messages) {
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: process.env.KIMI_MODEL || 'moonshot-v1-8k',
+      model,
       messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
       max_tokens: 512,
       temperature: 0.7,
     }),
   });
+
+  console.log('[quaere] Kimi response status:', response.status);
 
   if (!response.ok) {
     const detail = await response.text();
@@ -101,6 +106,7 @@ async function callKimi(messages) {
   }
 
   const data = await response.json();
+  console.log('[quaere] Kimi response received successfully');
   return data.choices[0].message.content;
 }
 
@@ -224,6 +230,8 @@ app.post('/api/chat', async (req, res) => {
     res.json({ reply });
   } catch (err) {
     console.error('[quaere] AI request error:', err.message);
+    console.error('[quaere] AI provider:', provider);
+    console.error('[quaere] Error cause:', err.cause);
     res.status(502).json({ error: 'Failed to reach the AI provider.', detail: err.message });
   }
 });
