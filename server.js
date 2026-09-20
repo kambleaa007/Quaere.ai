@@ -400,7 +400,7 @@ const POLLINATIONS_VIDEO_ENDPOINT = 'https://gen.pollinations.ai/video';
 const POLLINATIONS_TEXT_ENDPOINT = 'https://text.pollinations.ai/openai/chat/completions';
 
 async function generateVideoPollinations(prompt) {
-  const model = process.env.POLLINATIONS_VIDEO_MODEL || 'seedance';
+  const model = process.env.POLLINATIONS_VIDEO_MODEL || 'seedance-2.0-fast';
   const apiKey = process.env.POLLINATIONS_API_KEY;
   const videoUrl = `${POLLINATIONS_VIDEO_ENDPOINT}/${encodeURIComponent(prompt.trim())}?model=${model}`;
 

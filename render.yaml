@@ -40,7 +40,7 @@ services:
       - key: POLLINATIONS_IMAGE_MODEL
         value: flux
       - key: POLLINATIONS_VIDEO_MODEL
-        value: seedance
+        value: seedance-2.0-fast
       - key: SHIVA_AI_PROVIDER
         value: pollinations
     plan: free

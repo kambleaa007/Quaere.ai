@@ -35,7 +35,7 @@ function appendMessage(role, content) {
 function showTypingIndicator() {
   const { wrapper, inner } = createMessageElement('assistant', '');
   inner.className = 'text-sm font-light leading-relaxed text-gray-300 italic';
-  inner.innerHTML = '<span class="glow-amber">Shiva</span><span class="text-gray-500">. . .</span>';
+  inner.innerHTML = '<span class="glow-amber">Nataraj</span><span class="text-gray-500">. . .</span>';
   chatLog.appendChild(wrapper);
   scrollToBottom();
   return wrapper;
