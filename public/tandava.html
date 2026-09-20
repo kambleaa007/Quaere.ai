@@ -1,108 +1,419 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ताण्डव | Quaere.ai</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Noto+Sans:wght@300;400&family=Noto+Sans:ital,wdth,opsz@0,100%,-devanagari,100..1200&family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@300;400;500&display=swap');
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ताण्डव | Tandava AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;900&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;900&family=Inter:wght@300;400;500&display=swap');
 
-      body {
-        background-color: #121212;
-        background-image: url('/imgs/Gemini_Generated_Tadava.png');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        background-repeat: no-repeat;
-        font-family: 'Inter', sans-serif;
-        color: #e8e6e1;
-        position: relative;
-        overflow: hidden;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-      }
+    /* Tailwind Configuration */
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
 
-      body::before {
-        content: '';
-        position: fixed;
-        inset: 0;
-        background: linear-gradient(135deg, rgba(18, 18, 18, 0.85) 0%, rgba(18, 18, 18, 0.78) 100%);
-        z-index: -1;
-      }
+    /* Custom Fonts */
+    h1, h2, h3, h4, h5, .serif-heading {
+      font-family: 'Playfair Display', serif;
+    }
+    body, p, span, div:not(.serif-heading) {
+      font-family: 'Inter', sans-serif;
+    }
 
-      h1 {
-        font-family: 'Playfair Display', serif;
-      }
+    /* Cosmic Void Background */
+    body {
+      background-color: #05050a;
+      color: #ffffff;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+    }
 
-      .glow-amber {
-        color: #f59e0b;
-        text-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
-      }
+    /* Section Base */
+    .section {
+      height: 100vh;
+      width: 100%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem;
+      box-sizing: border-box;
+    }
 
-      ::-webkit-scrollbar {
-        width: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: rgba(245, 158, 11, 0.3);
-        border-radius: 3px;
-      }
+    /* The Cosmic Glow (Text) */
+    .cosmic-glow-text {
+      text-shadow: 0 0 10px #ff9800, 0 0 20px #ff5722, 0 0 40px #e65100;
+    }
 
-      .typing-cursor {
-        animation: blink 1.1s steps(2, start) infinite;
-      }
+    /* The Divine Aura (Boxes/Buttons) */
+    .divine-aura {
+      box-shadow: 0 0 15px rgba(255, 87, 34, 0.5), inset 0 0 10px rgba(255, 215, 0, 0.3);
+    }
 
-      @keyframes blink {
-        50% {
-          opacity: 0;
-        }
-      }
+    /* Ash Overlay Effect */
+    .ash-overlay {
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        radial-gradient(circle at 80% 70%, rgba(100, 100, 120, 0.03) 1px, transparent 1px);
+      background-size: 20px 20px, 30px 30px;
+    }
 
-      .sanskrit-text {
-        font-family: 'Noto Sans', sans-serif;
-      }
+    /* Section 1: Srishti - Deep Space Nebula */
+    #srishti {
+      background: linear-gradient(135deg, #0b132b 0%, #4b0082 50%, #00e5ff 100%);
+      overflow: hidden;
+    }
 
-      .content-section {
-        flex: 1;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        padding: 2rem;
-      }
-    </style>
-  </head>
-  <body class="flex flex-col h-screen">
-    <!-- Header -->
-    <header class="border-b border-gray-800 px-6 py-4 flex items-center justify-between bg-gray-900/30 backdrop-blur-sm">
-      <h1 class="text-2xl font-bold glow-amber">ताण्डव</h1>
-      <!-- Navigation -->
-      <nav class="flex space-x-4">
-        <a href="/index.html" class="text-gray-400 hover:text-amber-300 font-medium text-sm transition-colors">Home</a>
-        <a href="/goddess-lalita.html" class="text-gray-400 hover:text-amber-300 font-medium text-sm transition-colors">Vishwakarma</a>
-        <a href="/lord-shiva.html" class="text-gray-400 hover:text-amber-300 font-medium text-sm transition-colors">Nataraj</a>
-        <a href="/tandava.html" class="text-amber-400 hover:text-amber-300 font-medium text-sm transition-colors">ताण्डव</a>
-      </nav>
-      <span class="text-xs text-gray-500 font-light">Cosmic Dance</span>
-    </header>
+    #srishti::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(0, 229, 255, 0.15) 0%, transparent 70%);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      animation: pulse 4s ease-in-out infinite;
+      z-index: 0;
+    }
 
-    <!-- Main content section - no prompts, no chat -->
-    <main class="flex-1 flex items-center justify-center overflow-y-auto px-6 py-8 bg-gray-900/25">
-      <div class="max-w-4xl mx-auto text-center">
-        <p class="text-gray-400 text-lg font-light leading-relaxed mb-6">
-          ताण्डव represents the cosmic dance of Lord Shiva - the rhythm of creation, preservation, and transformation.
-        </p>
-        <p class="text-gray-500 text-sm font-light leading-relaxed">
-          This page is reserved for future exploration of the divine dance.
-        </p>
+    @keyframes pulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+      50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.9; }
+    }
+
+    /* Section 2: Tandava - Fiery Dance */
+    #tandava {
+      background: linear-gradient(135deg, #8b0000 0%, #ff5722 50%, #ffd700 100%);
+    }
+
+    .fire-ring {
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border: 4px solid transparent;
+      border-top-color: #ff5722;
+      border-right-color: #ffd700;
+      border-bottom-color: #8b0000;
+      border-left-color: #ff5722;
+      border-radius: 50%;
+      animation: spin 12s linear infinite;
+      z-index: 0;
+  opacity: 0.7;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .fire-card {
+      background: rgba(139, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 87, 34, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .fire-card::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(45deg, #ff5722, #ffd700, transparent, #8b0000);
+      z-index: -1;
+      animation: glow 2s ease-in-out infinite;
+    }
+
+    @keyframes glow {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.8; }
+    }
+
+    .fiery-text {
+      text-shadow: 0 0 10px #ff5722, 0 0 20px #ff9800, 0 0 40px #b35900;
+    }
+
+    /* Section 3: Pralaya - The Great Reset */
+    #pralaya {
+      background: linear-gradient(135deg, #000000 0%, #424242 50%, #f8f8ff 100%);
+      overflow: hidden;
+    }
+
+    /* Particle Effect */
+    .particle {
+      position: absolute;
+      background-color: rgba(248, 248, 255, 0.7);
+      border-radius: 50%;
+      animation: fall linear infinite;
+    }
+
+    @keyframes fall {
+      to {
+        transform: translateY(100vh);
+        opacity: 0;
+      }
+    }
+
+    /* Button Styles */
+    .btn-cyan-pulse {
+      border: 2px solid #00e5ff;
+      color: #00e5ff;
+      transition: all 0.3s ease;
+    }
+
+    .btn-cyan-pulse:hover {
+      box-shadow: 0 0 15px #00e5ff, inset 0 0 10px #00e5ff;
+      animation: pulse-glow 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 15px #00e5ff, inset 0 0 10px #00e5ff; }
+      50% { box-shadow: 0 0 25px #fff, inset 0 0 20px #00e5ff; }
+    }
+
+    .btn-reset {
+      background: linear-gradient(45deg, #8b0000, #ff5722);
+      color: #fff;
+      border: none;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .btn-reset:hover {
+      box-shadow: 0 0 25px #ff0000, inset 0 0 20px #ff0000;
+    }
+
+    .btn-reset::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .btn-reset:active::after {
+      width: 300px;
+      height: 300px;
+    }
+
+    /* Nav Styles */
+    .nav-link {
+      color: #e8e6e1;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-link:hover { color: #ff9800; }
+    .nav-link.active { color: #ff5722; text-shadow: 0 0 10px #ff5722; }
+
+    /* Scroll Indicator */
+    .scroll-indicator {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      color: #888;
+      font-size: 12px;
+    }
+
+    /* Fade-up animation */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.8s ease;
+    }
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 768px) {
+      .section { padding: 2rem 1rem; }
+      .split-content { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header / Navigation -->
+  <header class="fixed top-0 w-full flex justify-between items-center px-6 py-4 z-50 bg-[#05050a]/30 backdrop-blur-sm border-b border-gray-800">
+    <h1 class="text-2xl font-bold cosmic-glow-text">Tandava AI</h1>
+    <nav class="flex space-x-6">
+      <a href="#srishti" class="nav-link active">Srishti</a>
+      <a href="#tandava" class="nav-link">Tandava</a>
+      <a href="#pralaya" class="nav-link">Pralaya</a>
+    </nav>
+  </header>
+
+  <!-- Section 1: Srishti (The Spark of Creation) -->
+  <section id="srishti" class="section">
+    <!-- Animated stars -->
+    <div id="stars-srishti" class="absolute inset-0 z-0"></div>
+    
+    <div class="relative z-10 text-center fade-up">
+      <h1 class="text-5xl md:text-7xl font-black mb-6 cosmic-glow-text">
+        ॐ आरम्भ
+      </h1>
+      <p class="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto mb-8">
+        The Awakening — Birth of a new intelligence
+      </p>
+      <button class="btn-cyan-pulse font-bold py-3 px-8 rounded-lg text-lg">
+        Witness the Spark
+      </button>
+    </div>
+  </section>
+
+  <!-- Section 2: Tandava (The Cosmic Dance) -->
+  <section id="tandava" class="section">
+    <div class="absolute inset-0 z-0">
+      <div class="fire-ring"></div>
+      <div class="fire-ring" style="width: 400px; height: 400px; animation-duration: 15s; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+    </div>
+    
+    <div class="relative z-10 w-full fade-up">
+      <div class="flex flex-col lg:flex-row items-center gap-12 split-content">
+        <!-- Left Side: Floating UI Cards -->
+        <div class="w-full lg:w-1/2 space-y-6">
+          <div class="fire-card p-6 rounded-xl fiery-text fade-up" style="transition-delay: 0.2s;">
+            <h3 class="text-xl font-bold mb-2">Nataraja Detection Engine</h3>
+            <p class="text-sm opacity-80">Detects and identifies rogue AI agents across networks</p>
+          </div>
+          <div class="fire-card p-6 rounded-xl fiery-text fade-up" style="transition-delay: 0.4s;">
+            <h3 class="text-xl font-bold mb-2">Rudra Shield</h3>
+            <p class="text-sm opacity-80">Protects human data from unauthorized AI scraping</p>
+          </div>
+          <div class="fire-card p-6 rounded-xl fiery-text fade-up" style="transition-delay: 0.6s;">
+            <h3 class="text-xl font-bold mb-2">Pralaya Protocol</h3>
+            <p class="text-sm opacity-80">Counter-strike system for autonomous threat neutralization</p>
+          </div>
+        </div>
+        
+        <!-- Right Side: Image Placeholder -->
+        <div class="w-full lg:w-1/2 flex justify-center fade-up" style="transition-delay: 0.5s;">
+          <div class="relative">
+            <div class="w-64 h-64 lg:w-80 lg:h-80 bg-gray-800 rounded-full divine-aura flex items-center justify-center text-center p-6">
+              <span class="text-gray-400">[ Nataraja Performing Cosmic Dance ]</span>
+            </div>
+          </div>
+        </div>
       </div>
-    </main>
+    </div>
+  </section>
 
-    <!-- No footer/prompt area - clean page -->
-  </body>
+  <!-- Section 3: Pralaya (The Great Reset) -->
+  <section id="pralaya" class="section ash-overlay">
+    <div id="particles-pralaya" class="absolute inset-0 z-0"></div>
+    
+    <div class="relative z-10 text-center fade-up">
+      <h1 class="text-4xl md:text-6xl font-black mb-8 cosmic-glow-text">
+        Pralaya: The Ultimate Protocol
+      </h1>
+      <p class="text-lg text-gray-400 max-w-3xl mx-auto mb-12">
+        The ultimate counter-measure algorithm designed to neutralize rogue models and reset the digital universe.
+      </p>
+      <button id="reset-btn" class="btn-reset font-bold py-4 px-10 rounded-lg text-xl text-white">
+        Initialize Reset
+      </button>
+    </div>
+  </section>
+
+  <!-- Scroll Indicator -->
+  <div class="scroll-indicator">
+    Scroll to explore
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    // Starfield for Srishti section
+    function createStars(containerId, count = 200, color = '#ffffff', minSize = 1, maxSize = 3) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      for (let i = 0; i < count; i++) {
+        const star = document.createElement('div');
+        star.style.position = 'absolute';
+        star.style.backgroundColor = color;
+        star.style.width = `${Math.random() * (maxSize - minSize) + minSize}px`;
+        star.style.height = star.style.width;
+        star.style.left = `${Math.random() * 100}%`;
+        star.style.top = `${Math.random() * 100}%`;
+        star.style.opacity = Math.random() * 0.8;
+        container.appendChild(star);
+      }
+    }
+
+    // Particle effect for Pralaya
+    function createParticles() {
+      const container = document.getElementById('particles-pralaya');
+      if (!container) return;
+      for (let i = 0; i < 150; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.width = `${Math.random() * 3}px`;
+        particle.style.height = particle.style.width;
+        particle.style.animationDuration = `${Math.random() * 3 + 2}s`;
+        particle.style.animationDelay = `${Math.random() * 5}s`;
+        container.appendChild(particle);
+      }
+    }
+
+    // Fade-up animation on scroll
+    const fadeElements = document.querySelectorAll('.fade-up');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    fadeElements.forEach(el => observer.observe(el));
+
+    // Initialize effects
+    createStars('stars-srishti', 150, '#a8ffea', 1, 3);
+    createParticles();
+
+    // Nav link active states
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('.section');
+    
+    const sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const id = entry.target.id;
+        const link = document.querySelector(`[href="#${id}"]`);
+        if (entry.isIntersecting) {
+          document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+          if (link) link.classList.add('active');
+        }
+      });
+    }, { threshold: 0.5 });
+    
+    sections.forEach(section => sectionObserver.observe(section));
+
+    // Reset button hold effect
+    const resetBtn = document.getElementById('reset-btn');
+    if (resetBtn) {
+      resetBtn.addEventListener('mousedown', () => {
+        resetBtn.style.boxShadow = '0 0 30px #ff0000, inset 0 0 20px #ff0000';
+        resetBtn.style.transform = 'scale(0.98)';
+      });
+      resetBtn.addEventListener('mouseup', () => {
+        resetBtn.style.boxShadow = '';
+        resetBtn.style.transform = '';
+      });
+    }
+  </script>
+</body>
 </html>
