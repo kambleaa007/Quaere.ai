@@ -327,9 +327,9 @@ const provider = process.env.AI_PROVIDER || 'openai-compatible';
 });
 
 app.post('/api/translate', async (req, res) => {
-  const { text } = req.body;
+  const { text, targetLang = 'sanskrit' } = req.body;
 
-  console.log('[quaere] Translate request received');
+  console.log('[quaere] Translate request received for language:', targetLang);
   console.log('[quaere] Request body:', JSON.stringify(req.body));
 
   if (!text || typeof text !== 'string') {
@@ -337,12 +337,18 @@ app.post('/api/translate', async (req, res) => {
     return res.status(400).json({ error: 'Request body must contain a "text" string.' });
   }
 
-  const provider = process.env.AI_PROVIDER;
+  const provider = process.env.AI_PROVIDER || 'openai-compatible';
+  const langInstructions = {
+    sanskrit: 'You are a professional translator. Translate the given text to Sanskrit (in Devanagari script). Only return the translated text, nothing else.',
+    hindi: 'You are a professional translator. Translate the given text to Hindi (in Devanagari script). Only return the translated text, nothing else.'
+  };
+
+  const systemPrompt = langInstructions[targetLang] || langInstructions.sanskrit;
 
   try {
     let translatedText;
     if (provider === 'openai-compatible' || provider === 'openrouter') {
-      translatedText = await translateOpenAI(text);
+      translatedText = await translateText(text, systemPrompt);
     } else {
       return res.status(400).json({ error: 'Translation not configured for current provider.' });
     }
@@ -354,7 +360,7 @@ app.post('/api/translate', async (req, res) => {
   }
 });
 
-async function translateOpenAI(text) {
+async function translateText(text, systemPrompt) {
   const apiKey = process.env.OPENAI_API_KEY || process.env.GROQ_API_KEY || process.env.AI_API_KEY || process.env.OPENROUTER_API_KEY;
   const baseURL = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
   const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
@@ -374,7 +380,7 @@ async function translateOpenAI(text) {
       messages: [
         {
           role: 'system',
-          content: 'You are a professional translator. Translate the given text to Sanskrit (in Devanagari script). Only return the translated text, nothing else.'
+          content: systemPrompt || 'You are a professional translator. Translate the given text to Sanskrit (in Devanagari script). Only return the translated text, nothing else.'
         },
         {
           role: 'user',

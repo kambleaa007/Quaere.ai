@@ -9,41 +9,63 @@ const THINKING_DELAY = 600;
 
 const messageCache = new Map();
 
-function createMessageElement(role, content) {
+function createMessageWrapper(role) {
   const wrapper = document.createElement('div');
-  wrapper.className = 'max-w-3xl mx-auto relative group';
+  wrapper.className = 'max-w-3xl mx-auto';
 
-  const inner = document.createElement('div');
-  inner.className = role === 'user'
+  const contentDiv = document.createElement('div');
+  contentDiv.className = role === 'user'
     ? 'bg-gray-900 rounded-lg px-4 py-3 text-sm'
     : 'text-sm font-light leading-relaxed text-gray-200';
+  contentDiv.setAttribute('role', role);
 
-  inner.setAttribute('role', role);
-  inner.textContent = content;
+  const buttonContainer = document.createElement('div');
+  buttonContainer.className = 'flex gap-2 mt-2';
+  buttonContainer.style.display = 'none';
 
   const sanskritBtn = document.createElement('button');
-  sanskritBtn.className = 'translate-sanskrit-btn absolute top-0 right-0 ml-2 opacity-0 group-hover:opacity-100 hover:bg-amber-400 text-xs px-2 py-1 rounded transition-all duration-200';
-  sanskritBtn.textContent = 'ॐ Sanskrit';
+  sanskritBtn.className = 'translate-btn bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-[#121212] font-semibold text-xs px-2 py-1 rounded shadow transition-all duration-200 transform hover:scale-105';
+  sanskritBtn.textContent = 'ॐ संस्कृत';
   sanskritBtn.title = 'Click to translate to Sanskrit';
+  sanskritBtn.setAttribute('data-lang', 'sanskrit');
   sanskritBtn.setAttribute('data-translated', 'false');
-  sanskritBtn.style.display = 'none';
 
-  wrapper.appendChild(inner);
-  wrapper.appendChild(sanskritBtn);
+  const hindiBtn = document.createElement('button');
+  hindiBtn.className = 'translate-btn bg-gradient-to-r from-purple-400 to-purple-500 hover:from-purple-300 hover:to-purple-400 text-[#121212] font-semibold text-xs px-2 py-1 rounded shadow transition-all duration-200 transform hover:scale-105';
+  hindiBtn.textContent = 'हिंदी';
+  hindiBtn.title = 'Click to translate to Hindi';
+  hindiBtn.setAttribute('data-lang', 'hindi');
+  hindiBtn.setAttribute('data-translated', 'false');
 
-  return { wrapper, inner, sanskritBtn };
+  buttonContainer.appendChild(sanskritBtn);
+  buttonContainer.appendChild(hindiBtn);
+
+  wrapper.appendChild(contentDiv);
+  wrapper.appendChild(buttonContainer);
+
+  return { wrapper, contentDiv, buttonContainer, sanskritBtn, hindiBtn };
 }
 
 function appendMessage(role, content) {
-  const { wrapper, inner, sanskritBtn } = createMessageElement(role, content);
+  const { wrapper, contentDiv, buttonContainer, sanskritBtn, hindiBtn } = createMessageWrapper(role);
+  contentDiv.textContent = content;
   chatLog.appendChild(wrapper);
   scrollToBottom();
 
   if (role === 'assistant') {
-    sanskritBtn.style.display = 'block';
+    contentDiv.classList.add('group');
+    contentDiv.addEventListener('mouseenter', () => {
+      buttonContainer.style.display = 'flex';
+    });
+    contentDiv.addEventListener('mouseleave', () => {
+      buttonContainer.style.display = 'none';
+    });
+
+    sanskritBtn.addEventListener('click', () => toggleTranslation(contentDiv, sanskritBtn, content, 'sanskrit'));
+    hindiBtn.addEventListener('click', () => toggleTranslation(contentDiv, hindiBtn, content, 'hindi'));
   }
 
-  return { inner, sanskritBtn };
+  return contentDiv;
 }
 
 function animateTextInto(element, text) {
@@ -68,30 +90,21 @@ function animateTextInto(element, text) {
   });
 }
 
-function showTypingIndicator() {
-  const { wrapper, inner } = createMessageElement('assistant', '');
-  inner.className = 'text-sm font-light leading-relaxed text-gray-300 italic';
-  inner.innerHTML = '<span class="glow-amber">Quaere</span><span class="text-gray-500">. . .</span>';
-  chatLog.appendChild(wrapper);
-  scrollToBottom();
-  return wrapper;
-}
-
-async function toggleSanskrit(innerEl, btn, originalContent) {
+async function toggleTranslation(element, btn, originalContent, lang) {
   const isTranslated = btn.getAttribute('data-translated') === 'true';
 
   if (isTranslated) {
-    innerEl.textContent = originalContent;
-    innerEl.classList.remove('sanskrit-text');
-    innerEl.style.color = '';
-    innerEl.style.fontSize = '';
-    btn.textContent = '↺ Sanskrit';
-    btn.title = 'Click to translate to Sanskrit';
+    element.textContent = originalContent;
+    element.classList.remove('sanskrit-text');
+    element.style.color = '';
+    element.style.fontSize = '';
+    btn.textContent = btn.getAttribute('data-lang') === 'sanskrit' ? 'ॐ संस्कृत' : 'हिंदी';
     btn.setAttribute('data-translated', 'false');
+    btn.disabled = false;
     return;
   }
 
-  const cacheKey = originalContent;
+  const cacheKey = `${originalContent}__${lang}`;
   let translated = messageCache.get(cacheKey);
 
   if (!translated) {
@@ -102,7 +115,7 @@ async function toggleSanskrit(innerEl, btn, originalContent) {
       const response = await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: originalContent }),
+        body: JSON.stringify({ text: originalContent, targetLang: lang }),
       });
 
       if (!response.ok) {
@@ -114,29 +127,42 @@ async function toggleSanskrit(innerEl, btn, originalContent) {
       translated = data.translatedText;
       messageCache.set(cacheKey, translated);
 
-      innerEl.textContent = translated;
-      btn.textContent = 'EN';
+      element.textContent = translated;
+      element.classList.add('sanskrit-text');
+      element.style.color = '#e8e6e1';
+      element.style.fontSize = '1.1em';
+      btn.textContent = '↺ EN';
       btn.setAttribute('data-translated', 'true');
     } catch (err) {
-      btn.textContent = 'ॐ Sanskrit';
+      btn.textContent = lang === 'sanskrit' ? 'ॐ संस्कृत' : 'हिंदी';
       btn.disabled = false;
-      innerEl.classList.remove('sanskrit-text');
-      innerEl.innerHTML = `<span class="text-red-400 text-xs">Translation error: ${err.message}</span><br/>${originalContent}`;
+      element.innerHTML = `<span class="text-red-400 text-xs">Error: ${err.message}</span><br/>${originalContent}`;
       setTimeout(() => {
-        innerEl.textContent = originalContent;
+        element.textContent = originalContent;
       }, 2000);
     } finally {
       btn.disabled = false;
     }
   } else {
-    innerEl.textContent = translated;
-    innerEl.classList.add('sanskrit-text');
-    innerEl.style.color = '#e8e6e1';
-    innerEl.style.fontSize = '1.1em';
-    btn.textContent = 'ॐ EN';
-    btn.title = 'Click to switch back to English';
+    element.textContent = translated;
+    element.classList.add('sanskrit-text');
+    element.style.color = '#e8e6e1';
+    element.style.fontSize = '1.1em';
+    btn.textContent = '↺ EN';
     btn.setAttribute('data-translated', 'true');
   }
+}
+
+function showTypingIndicator() {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'max-w-3xl mx-auto';
+  const inner = document.createElement('div');
+  inner.className = 'text-sm font-light leading-relaxed text-gray-300 italic';
+  inner.innerHTML = '<span class="glow-amber">Quaere</span><span class="text-gray-500">. . .</span>';
+  wrapper.appendChild(inner);
+  chatLog.appendChild(wrapper);
+  scrollToBottom();
+  return wrapper;
 }
 
 function removeTypingIndicator(indicatorEl) {
@@ -180,16 +206,11 @@ async function sendMessage() {
     }
 
     const data = await response.json();
-    const { inner, sanskritBtn } = appendMessage('assistant', '');
-    sanskritBtn.style.display = 'none';
+    const inner = appendMessage('assistant', '');
     await animateTextInto(inner, data.reply);
-    sanskritBtn.style.display = 'block';
     scrollToBottom();
 
     conversationHistory.push({ role: 'assistant', content: data.reply });
-
-    // Bind the Sanskrit toggle handler with correct content
-    sanskritBtn.addEventListener('click', () => toggleSanskrit(inner, sanskritBtn, data.reply));
   } catch (err) {
     removeTypingIndicator(indicator);
     appendMessage('assistant', `Connection error: ${err.message}`);
