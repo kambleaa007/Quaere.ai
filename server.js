@@ -134,6 +134,30 @@ async function callHuggingFace(messages) {
   return reply.trim();
 }
 
+async function callLlamaCpp(messages) {
+  const baseURL = process.env.LLAMA_CPP_URL || 'http://localhost:8080';
+  const model = process.env.LLAMA_CPP_MODEL || 'QuantFactory/Llama-3.2-3B-Instruct-GGUF';
+
+  const response = await fetch(`${baseURL}/v1/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+      max_tokens: 512,
+      temperature: 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`llama.cpp request failed (${response.status}): ${detail}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
 app.post('/api/chat', async (req, res) => {
   const { messages } = req.body;
 
@@ -151,8 +175,10 @@ app.post('/api/chat', async (req, res) => {
       reply = await callOpenAI(messages);
     } else if (provider === 'huggingface') {
       reply = await callHuggingFace(messages);
+    } else if (provider === 'llamacpp') {
+      reply = await callLlamaCpp(messages);
     } else {
-      return res.status(400).json({ error: `Unknown AI_PROVIDER "${provider}". Use "ollama", "openai-compatible", or "huggingface".` });
+      return res.status(400).json({ error: `Unknown AI_PROVIDER "${provider}". Use "ollama", "openai-compatible", "huggingface", or "llamacpp".` });
     }
 
     res.json({ reply });

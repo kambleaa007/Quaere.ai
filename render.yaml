@@ -5,7 +5,11 @@ services:
     buildCommand: npm install
     startCommand: node server.js
     envVars:
-      # Active provider — switch to "huggingface" once HF Inference Endpoints are set up
+      # Active provider — switch to "huggingface" or "llamacpp" as needed
+      #   openai-compatible : Groq/TogetherAI/OpenAI (cloud, $0 with free tier)
+      #   huggingface       : HF Inference API (needs Inference Endpoints, ~$9+/mo)
+      #   llamacpp          : Local llama.cpp server (free, runs your own GGUF)
+      #   ollama            : Local Ollama (free, development only)
       - key: AI_PROVIDER
         value: openai-compatible
       - key: OPENAI_BASE_URL
@@ -19,4 +23,9 @@ services:
         value: kambleaa007/quaere-socratic
       - key: HF_API_KEY
         fromSecret: HF_API_KEY
+      # ── llama.cpp config (set AI_PROVIDER=llamacpp to use) ──
+      - key: LLAMA_CPP_URL
+        value: http://localhost:8080
+      - key: LLAMA_CPP_MODEL
+        value: quaere-socratic-q4_k_m.gguf
     plan: free

@@ -33,21 +33,28 @@ Open `http://localhost:3000`.
 
 | Variable | Required | Description |
 |---|---|---|
-| `AI_PROVIDER` | no | `ollama` (local default), `openai-compatible` (Groq fallback), or `huggingface` (Render default) |
-| `GROQ_API_KEY` | if openai-compatible | Groq API key (`gsk-…`) — also accepts `AI_API_KEY` as fallback |
+| `AI_PROVIDER` | no | `openai-compatible` (Render default), `ollama` (local), `huggingface`, `llamacpp` |
+| `GROQ_API_KEY` | if openai-compatible | Groq API key (`gsk-…`) |
 | `OPENAI_BASE_URL` | no | API base URL (default: Groq) |
 | `OPENAI_MODEL` | no | Model name (default: `llama-3.3-70b-versatile`) |
 | `OLLAMA_MODEL` | no | Ollama model (default: `llama3`) |
+| `LLAMA_CPP_URL` | if llamacpp | URL of llama-server (default: `http://localhost:8080`) |
+| `LLAMA_CPP_MODEL` | no | GGUF model name (reference only) |
 | `HF_API_KEY` | if huggingface | Hugging Face token |
 | `HF_MODEL_ID` | if huggingface | Model repo ID (e.g., `yourname/quaere-socratic`) |
 | `HF_ENDPOINT` | no | Custom HF Inference API URL |
 | `PORT` | no | Server port (default: `3000`) |
-| `OPENAI_BASE_URL` | no | API base URL (default: Groq) |
-| `OPENAI_MODEL` | no | Model name (default: `llama-3.3-70b-versatile`) |
-| `OLLAMA_MODEL` | no | Ollama model (default: `llama3`) |
-| `PORT` | no | Server port (default: `3000`) |
 
 ## Providers
+
+### Groq (cloud — free tier available)
+```bash
+AI_PROVIDER=openai-compatible
+OPENAI_BASE_URL=https://api.groq.com/openai/v1
+OPENAI_MODEL=llama-3.3-70b-versatile
+GROQ_API_KEY=gsk-your-key
+```
+**This is what the live site uses now.** No custom model deployment needed.
 
 ### Ollama (local)
 ```bash
@@ -56,27 +63,27 @@ OLLAMA_MODEL=llama3
 ```
 Requires Ollama running at `http://localhost:11434`.
 
-### Groq (cloud)
-```bash
-AI_PROVIDER=openai-compatible
-OPENAI_BASE_URL=https://api.groq.com/openai/v1
-OPENAI_MODEL=llama-3.3-70b-versatile
-GROQ_API_KEY=gsk-your-key
-```
-
-### Hugging Face (custom fine-tuned model)
+### Hugging Face (custom model — Inference Endpoints, ~$9+/mo)
 ```bash
 AI_PROVIDER=huggingface
-HF_API_KEY=hf-your-key
-HF_MODEL_ID=yourname/quaere-socratic
+HF_API_KEY=hf-your-real-token
+HF_MODEL_ID=kambleaa007/quaere-socratic
+HF_ENDPOINT=https://your-endpoint.hf.cloud
 ```
-> Once you've fine-tuned and uploaded your model (see *Fine-Tuning Pipeline* below).
+Requires deploying the model on HF Inference Endpoints (paid).
+
+### llama.cpp (free — run your GGUF locally or on a $5-10 VPS)
+```bash
+AI_PROVIDER=llamacpp
+LLAMA_CPP_URL=http://your-vps-ip:8080
+```
+Download the Q4_K_M GGUF from HuggingFace, run `llama-server`, and point to it. **Cheapest way to serve your custom model.**
 
 ## Deployment — Render.com
 
-> **[Quaere.ai is live on Render](https://quaere-ai.onrender.com)** — add your `GROQ_API_KEY` secret and push to deploy.
+> **[Quaere.ai is live on Render](https://quaere-ai.onrender.com)** — uses Groq free tier, no setup needed.
 
-1. Add a secret named `GROQ_API_KEY` in the Render Dashboard
+1. `GROQ_API_KEY` secret is already configured in the Render Dashboard
 2. Push to trigger auto-deploy via `render.yaml`:
 
 ```bash
