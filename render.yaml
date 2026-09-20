@@ -5,16 +5,18 @@ services:
     buildCommand: npm install
     startCommand: node server.js
     envVars:
+      # Active provider — switch to "huggingface" once HF Inference Endpoints are set up
       - key: AI_PROVIDER
-        value: huggingface
-      - key: HF_MODEL_ID
-        value: kambleaa007/quaere-socratic
-      - key: HF_API_KEY
-        fromSecret: HF_API_KEY
+        value: openai-compatible
       - key: OPENAI_BASE_URL
         value: https://api.groq.com/openai/v1
       - key: OPENAI_MODEL
         value: llama-3.3-70b-versatile
       - key: GROQ_API_KEY
         fromSecret: GROQ_API_KEY
+      # ── HuggingFace config (set AI_PROVIDER=huggingface to use) ──
+      - key: HF_MODEL_ID
+        value: kambleaa007/quaere-socratic
+      - key: HF_API_KEY
+        fromSecret: HF_API_KEY
     plan: free
