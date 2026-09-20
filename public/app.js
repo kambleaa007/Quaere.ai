@@ -22,8 +22,8 @@ function createMessageElement(role, content) {
   inner.textContent = content;
 
   const sanskritBtn = document.createElement('button');
-  sanskritBtn.className = 'translate-sanskrit-btn absolute top-0 right-0 ml-2 opacity-0 hover:opacity-100 bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 px-1.5 py-0.5 rounded transition-all duration-200';
-  sanskritBtn.textContent = '↺ Sanskrit';
+  sanskritBtn.className = 'translate-sanskrit-btn absolute top-0 right-0 ml-2 opacity-0 group-hover:opacity-100 hover:bg-amber-400 text-xs px-2 py-1 rounded transition-all duration-200';
+  sanskritBtn.textContent = 'ॐ Sanskrit';
   sanskritBtn.title = 'Click to translate to Sanskrit';
   sanskritBtn.setAttribute('data-translated', 'false');
   sanskritBtn.style.display = 'none';
@@ -118,7 +118,7 @@ async function toggleSanskrit(innerEl, btn, originalContent) {
       btn.textContent = 'EN';
       btn.setAttribute('data-translated', 'true');
     } catch (err) {
-      btn.textContent = '↺ Sanskrit';
+      btn.textContent = 'ॐ Sanskrit';
       btn.disabled = false;
       innerEl.classList.remove('sanskrit-text');
       innerEl.innerHTML = `<span class="text-red-400 text-xs">Translation error: ${err.message}</span><br/>${originalContent}`;
@@ -133,7 +133,7 @@ async function toggleSanskrit(innerEl, btn, originalContent) {
     innerEl.classList.add('sanskrit-text');
     innerEl.style.color = '#e8e6e1';
     innerEl.style.fontSize = '1.1em';
-    btn.textContent = 'EN';
+    btn.textContent = 'ॐ EN';
     btn.title = 'Click to switch back to English';
     btn.setAttribute('data-translated', 'true');
   }
