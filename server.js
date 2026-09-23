@@ -126,6 +126,47 @@ async function callOpenAI(messages) {
   return data.choices[0].message.content;
 }
 
+async function callAarambhaOpenAI(messages) {
+  const baseURL = process.env.AARAMBHA_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
+  const apiKey = process.env.AARAMBHA_OPENROUTER_API_KEY || process.env.AARAMBHA_OPENAI_API_KEY || process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
+  const model = process.env.AARAMBHA_OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini';
+
+  console.log('[quaere] Aarambha Provider: openai-compatible');
+  console.log('[quaere] Aarambha Base URL:', baseURL);
+  console.log('[quaere] Aarambha Model:', model);
+  console.log('[quaere] Aarambha API Key present:', !!apiKey);
+
+  if (!apiKey) {
+    throw new Error('AARAMBHA_OPENROUTER_API_KEY or OPENROUTER_API_KEY is required.');
+  }
+
+  const body = {
+    model,
+    messages: [{ role: 'system', content: AARAMBHA_SYSTEM_PROMPT }, ...messages],
+    max_tokens: 1024,
+    temperature: 0.7,
+  };
+
+  const response = await fetch(`${baseURL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  console.log('[quaere] Aarambha Response status:', response.status);
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Aarambha request failed (${response.status}): ${detail}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
 async function callKimi(messages) {
   const apiKey = process.env.KIMI_API_KEY;
   const model = process.env.KIMI_API_URL ? 'kimi' : (process.env.KIMI_MODEL || 'moonshot-v1-8k');
@@ -305,11 +346,11 @@ app.post('/api/aarambha-chat', async (req, res) => {
       ...messages
     ];
 
-    const provider = process.env.AI_PROVIDER || 'openai-compatible';
+const provider = process.env.AARAMBHA_AI_PROVIDER || process.env.AI_PROVIDER || 'openai-compatible';
 
     let reply;
     if (provider === 'openai-compatible' || provider === 'openrouter') {
-      reply = await callOpenAI(messagesWithSystem);
+      reply = await callAarambhaOpenAI(messagesWithSystem);
     } else if (provider === 'k25') {
       reply = await callK25(messagesWithSystem);
     } else if (provider === 'kimi') {
