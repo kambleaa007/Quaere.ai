@@ -67,7 +67,7 @@ async function sendMessage() {
   try {
     await new Promise((r) => setTimeout(r, THINKING_DELAY));
 
-    const response = await fetch('/api/claude-chat', {
+    const response = await fetch('/api/aarambha-chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: conversationHistory }),
