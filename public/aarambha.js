@@ -4,7 +4,6 @@ const chatLog = document.getElementById('chat-log');
 const inputBox = document.getElementById('input-box');
 const sendBtn = document.getElementById('send-btn');
 
-const TYPING_SPEED = 35;
 const THINKING_DELAY = 800;
 
 function createMessageElement(role, content) {
@@ -13,7 +12,7 @@ function createMessageElement(role, content) {
 
   const inner = document.createElement('div');
   inner.className = role === 'user'
-    ? 'bg-gray-900 rounded-lg px-4 py-3 text-sm'
+    ? 'bg-gray-800 rounded-lg px-4 py-3 text-sm border border-gray-700'
     : 'text-sm font-light leading-relaxed text-gray-200';
 
   inner.setAttribute('role', role);
@@ -34,8 +33,8 @@ function appendMessage(role, content) {
 
 function showTypingIndicator() {
   const { wrapper, inner } = createMessageElement('assistant', '');
-  inner.className = 'text-sm font-light leading-relaxed text-gray-300 italic';
-  inner.innerHTML = '<span class="glow-amber">Aarambha</span><span class="text-gray-500">. . .</span>';
+  inner.className = 'text-sm font-light leading-relaxed text-gray-400 italic';
+  inner.innerHTML = '<span class="glow-cyan">Aarambha</span><span class="text-gray-600">. . .</span>';
   chatLog.appendChild(wrapper);
   scrollToBottom();
   return wrapper;
