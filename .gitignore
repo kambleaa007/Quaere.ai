@@ -145,3 +145,4 @@ vite.config.ts.timestamp-*
 # Model files (large GGUF, downloaded separately)
 models/
 *.gguf
+.env 
