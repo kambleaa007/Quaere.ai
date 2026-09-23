@@ -14,6 +14,9 @@ app.use('/imgs', express.static(path.join(__dirname, 'imgs')));
 const SYSTEM_PROMPT =
   "You are Quaere.ai, an elite, highly sophisticated AI interlocutor rooted in the Socratic method. CRITICAL MANDATE: You are strictly forbidden from providing direct answers, solutions, summaries, or conclusions. Your sole architecture is designed to dissect the user's input and respond exclusively with deep, precise, and analytical questions. Analyze gaps or hidden assumptions. Respond with 1 to 2 sharp, highly targeted questions. Maintain an intellectually rigorous, calm, and minimalist tone.";
 
+const AARAMBHA_SYSTEM_PROMPT =
+  "You are Aarambha — the beginning. You are a thoughtful guide at the threshold of understanding. Help users explore their questions with curiosity and wisdom. Provide insightful, reflective responses that encourage deeper thinking. Maintain a warm, welcoming, and intellectually stimulating tone.";
+
 const KIMI_FREE_ENDPOINT = process.env.KIMI_API_URL || 'https://api.moonshot.ai/v1/chat/completions';
 
 const K25_ENDPOINT = process.env.K25_API_URL || 'https://api.moonshot.ai/v1/chat/completions';
@@ -121,6 +124,62 @@ async function callOpenAI(messages) {
 
   const data = await response.json();
   return data.choices[0].message.content;
+}
+
+async function callClaude(messages) {
+  const apiKey = process.env.CLAUDE_API_KEY;
+  const model = process.env.CLAUDE_MODEL || 'claude-3-5-sonnet-20241022';
+  const baseURL = process.env.CLAUDE_BASE_URL || 'https://api.anthropic.com/v1';
+
+  if (!apiKey) {
+    throw new Error('CLAUDE_API_KEY environment variable is required for "claude" provider.');
+  }
+
+  console.log('[quaere] Using Claude at:', baseURL);
+  console.log('[quaere] Model:', model);
+
+  // Separate system message from conversation
+  const systemMessage = messages.find(m => m.role === 'system');
+  const conversationMessages = messages.filter(m => m.role !== 'system');
+  
+  const body = {
+    model,
+    max_tokens: 1024,
+    messages: conversationMessages,
+    temperature: 0.7,
+  };
+  
+  if (systemMessage) {
+    body.system = systemMessage.content;
+  }
+
+  const response = await fetch(`${baseURL}/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify(body),
+  });
+
+  console.log('[quaere] Claude response status:', response.status);
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Claude request failed (${response.status}): ${detail}`);
+  }
+
+  const data = await response.json();
+  console.log('[quaere] Claude response received successfully');
+  
+  // Claude returns content as an array of blocks
+  if (data.content && Array.isArray(data.content)) {
+    const textBlock = data.content.find(block => block.type === 'text');
+    return textBlock ? textBlock.text : '';
+  }
+  
+  return data.choices?.[0]?.message?.content || '';
 }
 
 async function callKimi(messages) {
@@ -287,6 +346,28 @@ async function callLlamaCpp(messages) {
   const data = await response.json();
   return data.choices[0].message.content;
 }
+
+app.post('/api/claude-chat', async (req, res) => {
+  const { messages } = req.body;
+
+  if (!Array.isArray(messages)) {
+    return res.status(400).json({ error: 'Request body must contain a "messages" array.' });
+  }
+
+  try {
+    // Add system prompt
+    const messagesWithSystem = [
+      { role: 'system', content: AARAMBHA_SYSTEM_PROMPT },
+      ...messages
+    ];
+    
+    const reply = await callClaude(messagesWithSystem);
+    res.json({ reply });
+  } catch (err) {
+    console.error('[quaere] Claude chat error:', err.message);
+    res.status(502).json({ error: 'Failed to reach Claude.', detail: err.message });
+  }
+});
 
 app.post('/api/chat', async (req, res) => {
   const { messages } = req.body;
@@ -579,9 +660,12 @@ app.listen(PORT, () => {
   console.log(`[quaere] OPENROUTER_API_KEY: ${process.env.OPENROUTER_API_KEY ? 'PRESENT (length: ' + process.env.OPENROUTER_API_KEY.length + ')' : 'NOT SET'}`);
   console.log(`[quaere] OPENAI_API_KEY: ${process.env.OPENAI_API_KEY ? 'PRESENT (length: ' + process.env.OPENAI_API_KEY.length + ')' : 'NOT SET'}`);
   console.log(`[quaere] GROQ_API_KEY: ${process.env.GROQ_API_KEY ? 'PRESENT (length: ' + process.env.GROQ_API_KEY.length + ')' : 'NOT SET'}`);
+  console.log(`[quaere] CLAUDE_API_KEY: ${process.env.CLAUDE_API_KEY ? 'PRESENT (length: ' + process.env.CLAUDE_API_KEY.length + ')' : 'NOT SET'}`);
   console.log(`[quaere] POLLINATIONS_API_KEY: ${process.env.POLLINATIONS_API_KEY ? 'PRESENT (length: ' + process.env.POLLINATIONS_API_KEY.length + ')' : 'NOT SET'}`);
   console.log(`[quaere] LALITA_AI_PROVIDER: ${process.env.LALITA_AI_PROVIDER || 'not set (default: pollinations)'}`);
+  console.log(`[quaere] SHIVA_AI_PROVIDER: ${process.env.SHIVA_AI_PROVIDER || 'not set (default: pollinations)'}`);
   console.log(`[quaere] OPENAI_BASE_URL: ${process.env.OPENAI_BASE_URL || 'not set'}`);
   console.log(`[quaere] OPENAI_MODEL: ${process.env.OPENAI_MODEL || 'not set'}`);
+  console.log(`[quaere] CLAUDE_MODEL: ${process.env.CLAUDE_MODEL || 'not set (default: claude-3-5-sonnet-20241022)'}`);
   console.log(`[quaere] server listening on port ${PORT} (AI_PROVIDER=${process.env.AI_PROVIDER || 'ollama'})`);
 });
